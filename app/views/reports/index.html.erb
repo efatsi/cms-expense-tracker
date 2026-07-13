@@ -1,5 +1,7 @@
-<div class="mb-6">
-  <h1 class="text-2xl font-semibold">My Reports</h1>
+<div class="flex items-center justify-between mb-6">
+  <h1 class="text-2xl font-serif font-semibold"><%= current_user.admin? ? "Reports" : "My Reports" %></h1>
+  <%= link_to "Download CSV", reports_path(request.query_parameters.merge(format: :csv)),
+        class: "text-sm text-green-camp hover:text-green-dark font-medium border border-green-camp rounded-md px-3 py-1.5 hover:bg-green-50" %>
 </div>
 
 <div class="bg-white rounded-lg border border-gray-200 p-4 mb-6">
@@ -12,6 +14,13 @@
       <%= label_tag :end_date, "To", class: "block text-xs font-medium text-gray-600 mb-1" %>
       <%= date_field_tag :end_date, params[:end_date], class: "border border-gray-300 rounded-md px-3 py-2 text-sm" %>
     </div>
+    <% if current_user.admin? %>
+      <div>
+        <%= label_tag :user_id, "Employee", class: "block text-xs font-medium text-gray-600 mb-1" %>
+        <%= select_tag :user_id, options_from_collection_for_select(@users, :id, :name, params[:user_id]),
+              include_blank: "All Employees", class: "border border-gray-300 rounded-md px-3 py-2 text-sm" %>
+      </div>
+    <% end %>
     <div>
       <%= label_tag :expense_category_id, "Category", class: "block text-xs font-medium text-gray-600 mb-1" %>
       <%= select_tag :expense_category_id, options_from_collection_for_select(@categories, :id, :name, params[:expense_category_id]),
@@ -32,28 +41,38 @@
     <table class="w-full text-sm">
       <thead class="bg-gray-50 border-b border-gray-200">
         <tr>
+          <% if current_user.admin? %>
+            <th class="text-left px-4 py-3 font-medium text-gray-600">Employee</th>
+          <% end %>
           <th class="text-left px-4 py-3 font-medium text-gray-600">Date</th>
           <th class="text-left px-4 py-3 font-medium text-gray-600">Vendor</th>
           <th class="text-left px-4 py-3 font-medium text-gray-600">Payment Method</th>
           <th class="text-right px-4 py-3 font-medium text-gray-600">Total</th>
-          <th class="text-left px-4 py-3 font-medium text-gray-600">Status</th>
+          <% if current_user.admin? %>
+            <th class="text-left px-4 py-3 font-medium text-gray-600">Status</th>
+          <% end %>
           <th></th>
         </tr>
       </thead>
       <tbody class="divide-y divide-gray-100">
         <% @receipts.each do |receipt| %>
-          <tr class="hover:bg-gray-50">
+          <tr class="hover:bg-gray-50 cursor-pointer" data-controller="row-link" data-href="<%= receipt_path(receipt) %>" data-action="click->row-link#navigate">
+            <% if current_user.admin? %>
+              <td class="px-4 py-3 text-gray-600"><%= receipt.user.name %></td>
+            <% end %>
             <td class="px-4 py-3"><%= receipt.expense_date.strftime("%b %d, %Y") %></td>
             <td class="px-4 py-3 font-medium"><%= receipt.vendor %></td>
             <td class="px-4 py-3 text-gray-600"><%= receipt.payment_method.display_name %></td>
             <td class="px-4 py-3 text-right"><%= number_to_currency(receipt.total_amount) %></td>
-            <td class="px-4 py-3">
-              <span class="inline-flex px-2 py-0.5 rounded-full text-xs font-medium <%= receipt.matched? ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800' %>">
-                <%= receipt.status.capitalize %>
-              </span>
-            </td>
+            <% if current_user.admin? %>
+              <td class="px-4 py-3">
+                <span class="inline-flex px-2 py-0.5 rounded-full text-xs font-medium <%= receipt.matched? ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800' %>">
+                  <%= receipt.status.capitalize %>
+                </span>
+              </td>
+            <% end %>
             <td class="px-4 py-3 text-right">
-              <%= link_to "View", receipt, class: "text-indigo-600 hover:underline text-xs" %>
+              <%= link_to "View", receipt, class: "text-green-camp hover:underline text-xs" %>
             </td>
           </tr>
         <% end %>

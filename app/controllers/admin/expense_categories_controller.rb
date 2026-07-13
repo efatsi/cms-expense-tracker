@@ -2,7 +2,7 @@ class Admin::ExpenseCategoriesController < Admin::BaseController
   before_action :set_category, only: [ :edit, :update, :destroy ]
 
   def index
-    @categories = ExpenseCategory.order(:name)
+    @categories = ExpenseCategory.order(:section, :name)
   end
 
   def new

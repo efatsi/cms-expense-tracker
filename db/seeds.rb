@@ -8,8 +8,25 @@ elias_amex = PaymentMethod.find_or_create_by!(name: "Elias AmEx") do |pm|
 end
 
 # Expense Categories
-%w[Supplies Food Travel Equipment Utilities Other].each do |name|
-  ExpenseCategory.find_or_create_by!(name: name)
+Expense.delete_all
+ExpenseCategory.delete_all
+{
+  "Store"        => [ "Merch + Uniforms", "Photos", "Rx" ],
+  "Admin"        => [ "Payroll", "Staff Training", "Pro Fees (financial, legal, comp...)",
+                      "Laundry", "Contributions / Donations", "Employee Benefits",
+                      "CMS Liability Insurance", "Marketing - Parents Weekend", "Marketing",
+                      "Office Expenses", "Payroll Taxes", "Transportation", "Utilities" ],
+  "Facilities"   => [ "Payroll", "Cleaning Supplies", "Building Maintenance / Repairs",
+                      "Grounds + Landscaping", "Plumbing + Septic" ],
+  "Food Service" => [ "Salaries", "Kitchen Supplies", "Staff Training", "Food",
+                      "Staff Broker Fees", "Wolfoods" ],
+  "Healthcare"   => [ "Payroll", "Supplies" ],
+  "Program"      => [ "PD Salary", "Counselor Salaries", "Supplies",
+                      "Counselor Training + Certs" ]
+}.each do |section, names|
+  names.each do |name|
+    ExpenseCategory.create!(name: name, section: section, active: true)
+  end
 end
 
 # Admin users

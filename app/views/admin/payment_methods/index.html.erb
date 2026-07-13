@@ -1,6 +1,6 @@
 <div class="flex items-center justify-between mb-6">
-  <h1 class="text-2xl font-semibold">Payment Methods</h1>
-  <%= link_to "New Payment Method", new_admin_payment_method_path, class: "bg-indigo-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-indigo-700" %>
+  <h1 class="text-2xl font-serif font-semibold">Payment Methods</h1>
+  <%= link_to "New Payment Method", new_admin_payment_method_path, class: "bg-green-camp text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-green-dark" %>
 </div>
 
 <div class="bg-white rounded-lg border border-gray-200 overflow-hidden">
@@ -18,7 +18,7 @@
           <td class="px-4 py-3 font-medium"><%= pm.name %></td>
           <td class="px-4 py-3 text-gray-600"><%= pm.account_last_four.present? ? "****#{pm.account_last_four}" : "—" %></td>
           <td class="px-4 py-3 text-right flex gap-3 justify-end">
-            <%= link_to "Edit", edit_admin_payment_method_path(pm), class: "text-indigo-600 hover:underline text-xs" %>
+            <%= link_to "Edit", edit_admin_payment_method_path(pm), class: "text-green-camp hover:underline text-xs" %>
             <%= button_to "Delete", admin_payment_method_path(pm), method: :delete, data: { turbo_confirm: "Delete this payment method?" }, class: "text-red-600 hover:underline text-xs bg-transparent border-0 cursor-pointer" %>
           </td>
         </tr>

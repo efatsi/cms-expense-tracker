@@ -5,7 +5,7 @@ export default class extends Controller {
 
   dragover(event) {
     event.preventDefault()
-    this.zoneTarget.classList.add("border-indigo-400", "bg-indigo-50")
+    this.zoneTarget.classList.add("border-green-camp", "bg-green-50")
     this.zoneTarget.classList.remove("border-gray-300")
   }
 
@@ -32,7 +32,7 @@ export default class extends Controller {
   }
 
   _clearHighlight() {
-    this.zoneTarget.classList.remove("border-indigo-400", "bg-indigo-50")
+    this.zoneTarget.classList.remove("border-green-camp", "bg-green-50")
     this.zoneTarget.classList.add("border-gray-300")
   }
 }

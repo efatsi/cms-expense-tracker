@@ -17,7 +17,6 @@ Rails.application.routes.draw do
       collection { post :import }
       member { patch :match }
     end
-    resources :reports, only: [ :index ]
   end
 
   get "up" => "rails/health#show", as: :rails_health_check

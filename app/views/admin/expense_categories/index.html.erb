@@ -1,12 +1,13 @@
 <div class="flex items-center justify-between mb-6">
-  <h1 class="text-2xl font-semibold">Expense Categories</h1>
-  <%= link_to "New Category", new_admin_expense_category_path, class: "bg-indigo-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-indigo-700" %>
+  <h1 class="text-2xl font-serif font-semibold">Expense Categories</h1>
+  <%= link_to "New Category", new_admin_expense_category_path, class: "bg-green-camp text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-green-dark" %>
 </div>
 
 <div class="bg-white rounded-lg border border-gray-200 overflow-hidden">
   <table class="w-full text-sm">
     <thead class="bg-gray-50 border-b border-gray-200">
       <tr>
+        <th class="text-left px-4 py-3 font-medium text-gray-600">Section</th>
         <th class="text-left px-4 py-3 font-medium text-gray-600">Name</th>
         <th class="text-left px-4 py-3 font-medium text-gray-600">Active</th>
         <th></th>
@@ -15,6 +16,7 @@
     <tbody class="divide-y divide-gray-100">
       <% @categories.each do |cat| %>
         <tr class="hover:bg-gray-50">
+          <td class="px-4 py-3 text-gray-500"><%= cat.section %></td>
           <td class="px-4 py-3 font-medium"><%= cat.name %></td>
           <td class="px-4 py-3">
             <span class="inline-flex px-2 py-0.5 rounded-full text-xs font-medium <%= cat.active? ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-500' %>">
@@ -22,7 +24,7 @@
             </span>
           </td>
           <td class="px-4 py-3 text-right flex gap-3 justify-end">
-            <%= link_to "Edit", edit_admin_expense_category_path(cat), class: "text-indigo-600 hover:underline text-xs" %>
+            <%= link_to "Edit", edit_admin_expense_category_path(cat), class: "text-green-camp hover:underline text-xs" %>
             <%= button_to "Delete", admin_expense_category_path(cat), method: :delete, data: { turbo_confirm: "Delete this category?" }, class: "text-red-600 hover:underline text-xs bg-transparent border-0 cursor-pointer" %>
           </td>
         </tr>

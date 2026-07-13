@@ -1,1 +1,9 @@
 @import "tailwindcss";
+
+@theme {
+  --color-green-camp: #537326;
+  --color-green-dark: #4a7c3f;
+  --color-parchment: #f4ede0;
+  --font-sans: "Open Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-serif: "Lora", ui-serif, Georgia, serif;
+}

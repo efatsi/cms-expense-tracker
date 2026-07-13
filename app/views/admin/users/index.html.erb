@@ -1,6 +1,6 @@
 <div class="flex items-center justify-between mb-6">
-  <h1 class="text-2xl font-semibold">Users</h1>
-  <%= link_to "Invite User", new_user_invitation_path, class: "bg-indigo-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-indigo-700" %>
+  <h1 class="text-2xl font-serif font-semibold">Users</h1>
+  <%= link_to "Invite User", new_user_invitation_path, class: "bg-green-camp text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-green-dark" %>
 </div>
 
 <div class="bg-white rounded-lg border border-gray-200 overflow-hidden">
@@ -26,7 +26,7 @@
           </td>
           <td class="px-4 py-3 text-gray-600"><%= user.default_payment_method&.display_name || "—" %></td>
           <td class="px-4 py-3 text-right">
-            <%= link_to "Edit", edit_admin_user_path(user), class: "text-indigo-600 hover:underline text-xs" %>
+            <%= link_to "Edit", edit_admin_user_path(user), class: "text-green-camp hover:underline text-xs" %>
           </td>
         </tr>
       <% end %>

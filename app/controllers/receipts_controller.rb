@@ -3,7 +3,8 @@ class ReceiptsController < ApplicationController
   before_action :authorize_receipt!, only: [ :show, :edit, :update, :destroy ]
 
   def index
-    @receipts = current_user.admin? ? Receipt.all : current_user.receipts
+    @show_all = current_user.admin? && params[:all] == "1"
+    @receipts = @show_all ? Receipt.all : current_user.receipts
     @receipts = @receipts.includes(:user, :payment_method, :expenses)
                          .order(expense_date: :desc)
   end
@@ -12,7 +13,7 @@ class ReceiptsController < ApplicationController
   end
 
   def new
-    @receipt = Receipt.new
+    @receipt = Receipt.new(payment_method_id: current_user.default_payment_method_id, expense_date: Date.today)
     @receipt.expenses.build
   end
 

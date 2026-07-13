@@ -14,17 +14,17 @@
     <div class="grid grid-cols-2 gap-4">
       <div>
         <%= f.label :vendor, class: "block text-sm font-medium text-gray-700 mb-1" %>
-        <%= f.text_field :vendor, class: "w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500", required: true %>
+        <%= f.text_field :vendor, class: "w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-camp", required: true %>
       </div>
       <div>
         <%= f.label :expense_date, "Date", class: "block text-sm font-medium text-gray-700 mb-1" %>
-        <%= f.date_field :expense_date, class: "w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500", required: true %>
+        <%= f.date_field :expense_date, class: "w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-camp", required: true %>
       </div>
       <div>
         <%= f.label :payment_method_id, "Payment Method", class: "block text-sm font-medium text-gray-700 mb-1" %>
         <%= f.collection_select :payment_method_id, PaymentMethod.order(:name), :id, :display_name,
               { prompt: "Select payment method" },
-              class: "w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" %>
+              class: "w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-camp" %>
       </div>
       <div data-controller="file-drop">
         <%= f.label :file, "Receipt File", class: "block text-sm font-medium text-gray-700 mb-1" %>
@@ -43,7 +43,7 @@
       </div>
       <div class="col-span-2">
         <%= f.label :notes, class: "block text-sm font-medium text-gray-700 mb-1" %>
-        <%= f.text_area :notes, rows: 2, class: "w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" %>
+        <%= f.text_area :notes, rows: 2, class: "w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-camp" %>
       </div>
     </div>
   </div>
@@ -51,7 +51,7 @@
   <div class="bg-white rounded-lg border border-gray-200 p-6 mb-4">
     <div class="flex items-center justify-between mb-4">
       <h2 class="font-semibold">Expenses</h2>
-      <button type="button" data-action="expense-form#addRow" class="text-sm text-indigo-600 hover:text-indigo-800 font-medium">+ Add Expense</button>
+      <button type="button" data-action="expense-form#addRow" class="text-sm text-green-camp hover:text-green-dark font-medium">+ Add Expense</button>
     </div>
 
     <div data-expense-form-target="rows">
@@ -65,9 +65,7 @@
         <div class="col-span-3">
           <select name="receipt[expenses_attributes][NEW_INDEX][expense_category_id]" class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm">
             <option value="">Category</option>
-            <% ExpenseCategory.active.order(:name).each do |cat| %>
-              <option value="<%= cat.id %>"><%= cat.name %></option>
-            <% end %>
+            <%= grouped_expense_category_options %>
           </select>
         </div>
         <div class="col-span-6">
@@ -85,6 +83,6 @@
 
   <div class="flex justify-end gap-3">
     <%= link_to "Cancel", receipts_path, class: "px-4 py-2 text-sm text-gray-600 hover:text-gray-900" %>
-    <%= f.submit class: "bg-indigo-600 text-white px-6 py-2 rounded-md text-sm font-medium hover:bg-indigo-700 cursor-pointer" %>
+    <%= f.submit class: "bg-green-camp text-white px-6 py-2 rounded-md text-sm font-medium hover:bg-green-dark cursor-pointer" %>
   </div>
 <% end %>
