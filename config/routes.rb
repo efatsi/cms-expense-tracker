@@ -4,6 +4,7 @@ Rails.application.routes.draw do
   root "receipts#index"
 
   resources :receipts do
+    collection { post :analyze }
     resources :expenses, only: [ :new, :create, :edit, :update, :destroy ]
   end
 
