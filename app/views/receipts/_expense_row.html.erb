@@ -1,0 +1,21 @@
+<div class="expense-row grid grid-cols-12 gap-2 items-start mb-2">
+  <div class="col-span-3">
+    <%= ef.collection_select :expense_category_id, ExpenseCategory.active.order(:name), :id, :name,
+          { prompt: "Category" },
+          class: "w-full border border-gray-300 rounded-md px-3 py-2 text-sm" %>
+  </div>
+  <div class="col-span-6">
+    <%= ef.text_field :description, placeholder: "Description", class: "w-full border border-gray-300 rounded-md px-3 py-2 text-sm" %>
+  </div>
+  <div class="col-span-2">
+    <%= ef.number_field :amount, placeholder: "0.00", step: "0.01", min: "0.01", class: "w-full border border-gray-300 rounded-md px-3 py-2 text-sm" %>
+  </div>
+  <div class="col-span-1 flex justify-center pt-2">
+    <% if ef.object.persisted? %>
+      <%= ef.hidden_field :_destroy, value: false, data: { destroy_field: true } %>
+      <button type="button" data-action="expense-form#removeRow" class="text-red-400 hover:text-red-600 text-lg leading-none">&times;</button>
+    <% else %>
+      <button type="button" data-action="expense-form#removeRow" class="text-red-400 hover:text-red-600 text-lg leading-none">&times;</button>
+    <% end %>
+  </div>
+</div>

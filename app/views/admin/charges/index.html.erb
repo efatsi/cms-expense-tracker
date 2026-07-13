@@ -1,0 +1,79 @@
+<div class="flex items-center justify-between mb-6">
+  <h1 class="text-2xl font-semibold">AmEx Charges</h1>
+</div>
+
+<div class="bg-white rounded-lg border border-gray-200 p-6 mb-6">
+  <h2 class="font-semibold mb-4">Import CSV Statement</h2>
+  <%= form_with url: import_admin_charges_path, method: :post, multipart: true, class: "flex flex-wrap gap-3 items-end" do |f| %>
+    <div>
+      <%= label_tag :payment_method_id, "Payment Method", class: "block text-xs font-medium text-gray-600 mb-1" %>
+      <%= select_tag :payment_method_id, options_from_collection_for_select(@payment_methods, :id, :display_name),
+            include_blank: "Select method...", class: "border border-gray-300 rounded-md px-3 py-2 text-sm" %>
+    </div>
+    <div>
+      <%= label_tag :file, "CSV File", class: "block text-xs font-medium text-gray-600 mb-1" %>
+      <%= file_field_tag :file, accept: ".csv", class: "text-sm text-gray-600 file:mr-3 file:py-1.5 file:px-3 file:rounded file:border file:border-gray-300 file:text-sm file:bg-gray-50 file:cursor-pointer" %>
+    </div>
+    <%= submit_tag "Import", class: "bg-indigo-600 text-white px-4 py-2 rounded-md text-sm cursor-pointer hover:bg-indigo-700" %>
+  <% end %>
+  <p class="text-xs text-gray-500 mt-2">Expected CSV columns: Date, Amount, Description</p>
+</div>
+
+<div class="flex items-center gap-4 mb-4">
+  <%= form_with url: admin_charges_path, method: :get, class: "flex items-center gap-3" do |f| %>
+    <label class="flex items-center gap-2 text-sm cursor-pointer">
+      <%= check_box_tag :unmatched_only, "1", params[:unmatched_only].present?, class: "rounded" %>
+      Show unmatched only
+    </label>
+    <%= submit_tag "Apply", class: "text-sm text-indigo-600 hover:underline bg-transparent border-0 cursor-pointer" %>
+  <% end %>
+</div>
+
+<div class="bg-white rounded-lg border border-gray-200 overflow-hidden">
+  <table class="w-full text-sm">
+    <thead class="bg-gray-50 border-b border-gray-200">
+      <tr>
+        <th class="text-left px-4 py-3 font-medium text-gray-600">Date</th>
+        <th class="text-left px-4 py-3 font-medium text-gray-600">Payment Method</th>
+        <th class="text-left px-4 py-3 font-medium text-gray-600">Description</th>
+        <th class="text-right px-4 py-3 font-medium text-gray-600">Amount</th>
+        <th class="text-left px-4 py-3 font-medium text-gray-600">Status</th>
+        <th class="px-4 py-3 font-medium text-gray-600">Match</th>
+      </tr>
+    </thead>
+    <tbody class="divide-y divide-gray-100">
+      <% @charges.each do |charge| %>
+        <tr class="hover:bg-gray-50">
+          <td class="px-4 py-3"><%= charge.transaction_date.strftime("%b %d, %Y") %></td>
+          <td class="px-4 py-3 text-gray-600"><%= charge.payment_method.display_name %></td>
+          <td class="px-4 py-3"><%= charge.description %></td>
+          <td class="px-4 py-3 text-right font-medium"><%= number_to_currency(charge.amount) %></td>
+          <td class="px-4 py-3">
+            <% if charge.receipt %>
+              <span class="inline-flex px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">Matched</span>
+            <% else %>
+              <span class="inline-flex px-2 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">Unmatched</span>
+            <% end %>
+          </td>
+          <td class="px-4 py-3">
+            <% if charge.receipt %>
+              <%= link_to "Receipt ##{charge.receipt_id}", charge.receipt, class: "text-xs text-indigo-600 hover:underline" %>
+            <% else %>
+              <% suggestions = charge.suggested_receipts %>
+              <%= form_with url: match_admin_charge_path(charge), method: :patch, class: "flex gap-2 items-center" do |f| %>
+                <%= select_tag "receipt_id",
+                      options_from_collection_for_select(Receipt.order(expense_date: :desc).limit(50), :id, ->(r) { "#{r.vendor} – #{r.expense_date} (#{number_to_currency(r.total_amount)})" }),
+                      include_blank: suggestions.any? ? "💡 #{suggestions.first.vendor} (suggested)" : "Select receipt...",
+                      class: "border border-gray-300 rounded px-2 py-1 text-xs" %>
+                <%= submit_tag "Match", class: "bg-indigo-600 text-white px-2 py-1 rounded text-xs cursor-pointer hover:bg-indigo-700" %>
+              <% end %>
+            <% end %>
+          </td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+  <% if @charges.empty? %>
+    <p class="text-gray-500 text-center py-8">No charges found.</p>
+  <% end %>
+</div>

@@ -1,0 +1,76 @@
+<div class="flex items-center gap-4 mb-6">
+  <%= link_to "← Receipts", receipts_path, class: "text-sm text-gray-500 hover:text-gray-700" %>
+  <div class="flex-1"></div>
+  <%= link_to "Edit", edit_receipt_path(@receipt), class: "text-sm text-indigo-600 hover:underline" %>
+  <%= button_to "Delete", @receipt, method: :delete, data: { turbo_confirm: "Delete this receipt?" }, class: "text-sm text-red-600 hover:underline bg-transparent border-0 cursor-pointer" %>
+</div>
+
+<div class="bg-white rounded-lg border border-gray-200 p-6 mb-6">
+  <div class="flex items-start justify-between mb-4">
+    <div>
+      <h1 class="text-xl font-semibold"><%= @receipt.vendor %></h1>
+      <p class="text-gray-500 text-sm mt-1"><%= @receipt.expense_date.strftime("%B %d, %Y") %></p>
+    </div>
+    <span class="inline-flex px-3 py-1 rounded-full text-sm font-medium <%= @receipt.matched? ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800' %>">
+      <%= @receipt.status.capitalize %>
+    </span>
+  </div>
+
+  <dl class="grid grid-cols-2 gap-4 text-sm">
+    <div>
+      <dt class="text-gray-500">Payment Method</dt>
+      <dd class="font-medium mt-1"><%= @receipt.payment_method.display_name %></dd>
+    </div>
+    <div>
+      <dt class="text-gray-500">Submitted by</dt>
+      <dd class="font-medium mt-1"><%= @receipt.user.name %></dd>
+    </div>
+    <% if @receipt.notes.present? %>
+      <div class="col-span-2">
+        <dt class="text-gray-500">Notes</dt>
+        <dd class="mt-1"><%= @receipt.notes %></dd>
+      </div>
+    <% end %>
+  </dl>
+</div>
+
+<div class="bg-white rounded-lg border border-gray-200 overflow-hidden mb-6">
+  <div class="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
+    <h2 class="font-semibold">Expenses</h2>
+  </div>
+  <table class="w-full text-sm">
+    <thead class="bg-gray-50">
+      <tr>
+        <th class="text-left px-6 py-3 font-medium text-gray-600">Category</th>
+        <th class="text-left px-6 py-3 font-medium text-gray-600">Description</th>
+        <th class="text-right px-6 py-3 font-medium text-gray-600">Amount</th>
+      </tr>
+    </thead>
+    <tbody class="divide-y divide-gray-100">
+      <% @receipt.expenses.each do |expense| %>
+        <tr>
+          <td class="px-6 py-3 text-gray-600"><%= expense.expense_category.name %></td>
+          <td class="px-6 py-3"><%= expense.description %></td>
+          <td class="px-6 py-3 text-right font-medium"><%= number_to_currency(expense.amount) %></td>
+        </tr>
+      <% end %>
+    </tbody>
+    <tfoot class="border-t border-gray-200 bg-gray-50">
+      <tr>
+        <td colspan="2" class="px-6 py-3 font-semibold text-right">Total</td>
+        <td class="px-6 py-3 text-right font-bold"><%= number_to_currency(@receipt.total_amount) %></td>
+      </tr>
+    </tfoot>
+  </table>
+</div>
+
+<% if @receipt.file.attached? %>
+  <div class="bg-white rounded-lg border border-gray-200 p-6">
+    <h2 class="font-semibold mb-3">Attached Receipt</h2>
+    <% if @receipt.file.image? %>
+      <%= image_tag @receipt.file, class: "max-w-md rounded border" %>
+    <% else %>
+      <%= link_to "Download Receipt", rails_blob_path(@receipt.file, disposition: "attachment"), class: "text-indigo-600 hover:underline" %>
+    <% end %>
+  </div>
+<% end %>

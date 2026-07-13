@@ -1,0 +1,90 @@
+<%= form_with model: receipt, data: { controller: "expense-form" } do |f| %>
+  <% if receipt.errors.any? %>
+    <div class="bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-md text-sm mb-4">
+      <ul class="list-disc pl-4">
+        <% receipt.errors.full_messages.each do |msg| %>
+          <li><%= msg %></li>
+        <% end %>
+      </ul>
+    </div>
+  <% end %>
+
+  <div class="bg-white rounded-lg border border-gray-200 p-6 mb-4">
+    <h2 class="font-semibold mb-4">Receipt Details</h2>
+    <div class="grid grid-cols-2 gap-4">
+      <div>
+        <%= f.label :vendor, class: "block text-sm font-medium text-gray-700 mb-1" %>
+        <%= f.text_field :vendor, class: "w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500", required: true %>
+      </div>
+      <div>
+        <%= f.label :expense_date, "Date", class: "block text-sm font-medium text-gray-700 mb-1" %>
+        <%= f.date_field :expense_date, class: "w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500", required: true %>
+      </div>
+      <div>
+        <%= f.label :payment_method_id, "Payment Method", class: "block text-sm font-medium text-gray-700 mb-1" %>
+        <%= f.collection_select :payment_method_id, PaymentMethod.order(:name), :id, :display_name,
+              { prompt: "Select payment method" },
+              class: "w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" %>
+      </div>
+      <div data-controller="file-drop">
+        <%= f.label :file, "Receipt File", class: "block text-sm font-medium text-gray-700 mb-1" %>
+        <div data-file-drop-target="zone"
+             data-action="dragover->file-drop#dragover dragleave->file-drop#dragleave drop->file-drop#drop"
+             class="border-2 border-dashed border-gray-300 rounded-md px-4 py-5 text-center transition-colors cursor-pointer"
+             onclick="this.querySelector('input[type=file]').click()">
+          <svg class="mx-auto mb-2 text-gray-400 pointer-events-none" style="width:1.5rem;height:1.5rem" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 16.5V19a2 2 0 002 2h14a2 2 0 002-2v-2.5M16 12l-4-4m0 0l-4 4m4-4v12"/>
+          </svg>
+          <span data-file-drop-target="label" class="text-sm text-gray-500 pointer-events-none">Drop file here or click to browse</span>
+          <%= f.file_field :file, accept: "image/*,.pdf",
+                data: { file_drop_target: "input", action: "change->file-drop#fileChanged" },
+                class: "sr-only" %>
+        </div>
+      </div>
+      <div class="col-span-2">
+        <%= f.label :notes, class: "block text-sm font-medium text-gray-700 mb-1" %>
+        <%= f.text_area :notes, rows: 2, class: "w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" %>
+      </div>
+    </div>
+  </div>
+
+  <div class="bg-white rounded-lg border border-gray-200 p-6 mb-4">
+    <div class="flex items-center justify-between mb-4">
+      <h2 class="font-semibold">Expenses</h2>
+      <button type="button" data-action="expense-form#addRow" class="text-sm text-indigo-600 hover:text-indigo-800 font-medium">+ Add Expense</button>
+    </div>
+
+    <div data-expense-form-target="rows">
+      <%= f.fields_for :expenses do |ef| %>
+        <%= render "expense_row", ef: ef %>
+      <% end %>
+    </div>
+
+    <template data-expense-form-target="template">
+      <div class="expense-row grid grid-cols-12 gap-2 items-start mb-2">
+        <div class="col-span-3">
+          <select name="receipt[expenses_attributes][NEW_INDEX][expense_category_id]" class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm">
+            <option value="">Category</option>
+            <% ExpenseCategory.active.order(:name).each do |cat| %>
+              <option value="<%= cat.id %>"><%= cat.name %></option>
+            <% end %>
+          </select>
+        </div>
+        <div class="col-span-6">
+          <input type="text" name="receipt[expenses_attributes][NEW_INDEX][description]" placeholder="Description" class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm">
+        </div>
+        <div class="col-span-2">
+          <input type="number" name="receipt[expenses_attributes][NEW_INDEX][amount]" placeholder="0.00" step="0.01" min="0.01" class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm">
+        </div>
+        <div class="col-span-1 flex justify-center pt-2">
+          <button type="button" data-action="expense-form#removeRow" class="text-red-400 hover:text-red-600 text-lg leading-none">&times;</button>
+        </div>
+      </div>
+    </template>
+  </div>
+
+  <div class="flex justify-end gap-3">
+    <%= link_to "Cancel", receipts_path, class: "px-4 py-2 text-sm text-gray-600 hover:text-gray-900" %>
+    <%= f.submit class: "bg-indigo-600 text-white px-6 py-2 rounded-md text-sm font-medium hover:bg-indigo-700 cursor-pointer" %>
+  </div>
+<% end %>
