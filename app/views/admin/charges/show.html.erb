@@ -73,7 +73,7 @@
   <% end %>
 
   <% if @charge.receipts.any? %>
-    <div class="bg-white rounded-lg border border-gray-200 overflow-hidden mb-6">
+    <div class="bg-white rounded-lg border border-gray-200 overflow-hidden mb-6" data-controller="modal">
       <div class="px-6 py-4 border-b border-gray-200">
         <h2 class="font-semibold">Matched Receipts</h2>
       </div>
@@ -90,7 +90,8 @@
         <tbody class="divide-y divide-gray-100">
           <% @charge.receipts.each do |receipt| %>
             <tr class="cursor-pointer hover:bg-gray-50"
-                data-controller="row-link" data-href="<%= receipt_path(receipt) %>" data-new-tab="true" data-action="click->row-link#navigate">
+                data-modal-id="receipt-modal-<%= receipt.id %>"
+                data-action="click->modal#open">
               <td class="px-4 py-3">
                 <% if receipt.file.attached? && receipt.file.image? %>
                   <%= image_tag receipt.file, class: "h-12 w-16 object-cover rounded border border-gray-200" %>
@@ -108,6 +109,66 @@
           <% end %>
         </tbody>
       </table>
+
+      <%# Hidden modals — one per receipt %>
+      <% @charge.receipts.each do |receipt| %>
+        <div id="receipt-modal-<%= receipt.id %>" data-modal class="hidden fixed inset-0 z-50 flex items-start justify-center pt-16 px-4"
+             style="background: rgba(0,0,0,0.5);"
+             data-action="click->modal#closeOnBackdrop">
+          <div class="bg-white rounded-xl shadow-xl w-full max-w-2xl max-h-[80vh] overflow-y-auto">
+            <div class="flex items-start justify-between px-6 py-4 border-b border-gray-200">
+              <div>
+                <h2 class="text-lg font-semibold"><%= receipt.vendor %></h2>
+                <p class="text-sm text-gray-500 mt-0.5"><%= receipt.expense_date.strftime("%B %d, %Y") %> · <%= receipt.user.name %></p>
+              </div>
+              <div class="flex items-center gap-3 ml-4 shrink-0">
+                <%= link_to "Open →", receipt_path(receipt), target: "_blank", class: "text-sm text-green-camp hover:underline" %>
+                <button data-action="click->modal#close" class="text-gray-400 hover:text-gray-600 text-xl leading-none">&times;</button>
+              </div>
+            </div>
+
+            <div class="px-6 py-4">
+              <table class="w-full text-sm mb-4">
+                <thead class="border-b border-gray-100">
+                  <tr>
+                    <th class="text-left pb-2 font-medium text-gray-600">Category</th>
+                    <th class="text-left pb-2 font-medium text-gray-600">Description</th>
+                    <th class="text-right pb-2 font-medium text-gray-600">Amount</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-100">
+                  <% receipt.expenses.each do |expense| %>
+                    <tr>
+                      <td class="py-2 pr-4">
+                        <div class="text-xs text-gray-400"><%= expense.expense_category.section %></div>
+                        <div><%= expense.expense_category.name %></div>
+                      </td>
+                      <td class="py-2 pr-4 text-gray-600"><%= expense.description %></td>
+                      <td class="py-2 text-right font-medium"><%= number_to_currency(expense.amount) %></td>
+                    </tr>
+                  <% end %>
+                </tbody>
+                <tfoot class="border-t border-gray-200">
+                  <tr>
+                    <td colspan="2" class="pt-2 text-right font-semibold">Total</td>
+                    <td class="pt-2 text-right font-bold"><%= number_to_currency(receipt.total_amount) %></td>
+                  </tr>
+                </tfoot>
+              </table>
+
+              <% if receipt.file.attached? %>
+                <% if receipt.file.image? %>
+                  <%= image_tag receipt.file, class: "w-full rounded border border-gray-200" %>
+                <% elsif receipt.file.content_type == "application/pdf" %>
+                  <iframe src="<%= rails_blob_path(receipt.file, disposition: "inline") %>#navpanes=0"
+                          class="w-full rounded border border-gray-200" style="height: 500px;"
+                          title="Receipt PDF"></iframe>
+                <% end %>
+              <% end %>
+            </div>
+          </div>
+        </div>
+      <% end %>
     </div>
   <% end %>
 <% else %>

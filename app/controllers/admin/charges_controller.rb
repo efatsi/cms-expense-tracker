@@ -6,7 +6,7 @@ class Admin::ChargesController < Admin::BaseController
   def show
     @charge = Charge.includes(:payment_method, :charge_receipts,
                                charge_expenses: :expense_category,
-                               receipts: { expenses: :expense_category }).find(params[:id])
+                               receipts: [ { expenses: :expense_category }, { file_attachment: :blob } ]).find(params[:id])
     @nearby_receipts = @charge.nearby_receipts
     @associated_ids = @charge.receipts.pluck(:id).to_set
   end
