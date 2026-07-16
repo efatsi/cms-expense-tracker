@@ -1,0 +1,75 @@
+<div class="flex items-center gap-4 mb-6">
+  <%= link_to "← Charges", admin_charges_path, class: "text-sm text-gray-500 hover:text-gray-700" %>
+</div>
+
+<div class="bg-white rounded-lg border border-gray-200 p-6 mb-6">
+  <div class="flex items-start justify-between mb-4">
+    <div>
+      <h1 class="text-xl font-semibold"><%= @charge.description %></h1>
+      <p class="text-gray-500 text-sm mt-1"><%= @charge.transaction_date.strftime("%B %d, %Y") %></p>
+    </div>
+    <% if @charge.receipt %>
+      <span class="inline-flex px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">Matched</span>
+    <% else %>
+      <span class="inline-flex px-3 py-1 rounded-full text-sm font-medium bg-yellow-100 text-yellow-800">Unmatched</span>
+    <% end %>
+  </div>
+
+  <dl class="grid grid-cols-2 gap-4 text-sm">
+    <div>
+      <dt class="text-gray-500">Payment Method</dt>
+      <dd class="font-medium mt-1"><%= @charge.payment_method.display_name %></dd>
+    </div>
+    <div>
+      <dt class="text-gray-500">Amount</dt>
+      <dd class="font-medium mt-1"><%= number_to_currency(@charge.amount) %></dd>
+    </div>
+    <% if @charge.matched_at %>
+      <div>
+        <dt class="text-gray-500">Matched at</dt>
+        <dd class="font-medium mt-1"><%= @charge.matched_at.strftime("%B %d, %Y at %l:%M %p") %></dd>
+      </div>
+    <% end %>
+  </dl>
+</div>
+
+<% if @charge.receipt %>
+  <div class="bg-white rounded-lg border border-gray-200 p-6 mb-6">
+    <h2 class="font-semibold mb-4">Matched Receipt</h2>
+    <div class="flex items-center justify-between">
+      <div>
+        <p class="font-medium"><%= @charge.receipt.vendor %></p>
+        <p class="text-sm text-gray-500 mt-0.5"><%= @charge.receipt.expense_date.strftime("%B %d, %Y") %> · <%= number_to_currency(@charge.receipt.total_amount) %></p>
+      </div>
+      <%= link_to "View Receipt →", @charge.receipt, class: "text-sm text-green-camp hover:underline" %>
+    </div>
+  </div>
+<% else %>
+  <div class="bg-white rounded-lg border border-gray-200 p-6">
+    <h2 class="font-semibold mb-4">Match to Receipt</h2>
+    <% suggestions = @charge.suggested_receipts %>
+    <% if suggestions.any? %>
+      <p class="text-sm text-gray-500 mb-3">Suggested match based on date and amount:</p>
+      <div class="mb-4 space-y-2">
+        <% suggestions.each do |receipt| %>
+          <%= form_with url: match_admin_charge_path(@charge), method: :patch, class: "flex items-center justify-between p-3 rounded-lg border border-green-200 bg-green-50" do |f| %>
+            <div>
+              <p class="text-sm font-medium"><%= receipt.vendor %></p>
+              <p class="text-xs text-gray-500"><%= receipt.expense_date.strftime("%B %d, %Y") %> · <%= number_to_currency(receipt.total_amount) %> · <%= receipt.user.name %></p>
+            </div>
+            <%= hidden_field_tag :receipt_id, receipt.id %>
+            <%= submit_tag "Match", class: "bg-green-camp text-white px-3 py-1.5 rounded text-sm cursor-pointer hover:bg-green-dark" %>
+          <% end %>
+        <% end %>
+      </div>
+      <p class="text-xs text-gray-400 mb-2">Or choose manually:</p>
+    <% end %>
+    <%= form_with url: match_admin_charge_path(@charge), method: :patch, class: "flex gap-2 items-center" do |f| %>
+      <%= select_tag "receipt_id",
+            options_from_collection_for_select(Receipt.order(expense_date: :desc), :id, ->(r) { "#{r.vendor} – #{r.expense_date} (#{number_to_currency(r.total_amount)})" }),
+            include_blank: "Select receipt...",
+            class: "flex-1 border border-gray-300 rounded-md px-3 py-2 text-sm" %>
+      <%= submit_tag "Match", class: "bg-green-camp text-white px-4 py-2 rounded-md text-sm cursor-pointer hover:bg-green-dark" %>
+    <% end %>
+  </div>
+<% end %>

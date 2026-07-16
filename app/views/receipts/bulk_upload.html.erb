@@ -1,0 +1,35 @@
+<div class="mb-6">
+  <h1 class="text-2xl font-serif font-semibold">Bulk Upload Receipts</h1>
+  <p class="text-gray-500 text-sm mt-1">Upload a zip file of receipt images or PDFs to create receipts and queue AI analysis for each file.</p>
+</div>
+
+<% if flash[:alert] %>
+  <div class="mb-4 p-3 bg-red-50 border border-red-200 rounded-md text-red-700 text-sm"><%= flash[:alert] %></div>
+<% end %>
+
+<div class="bg-white rounded-lg border border-gray-200 p-6 max-w-lg">
+  <%= form_with url: bulk_upload_receipts_path, method: :post, multipart: true do |f| %>
+    <div class="space-y-4">
+      <div>
+        <%= f.label :user_email, "User Email", class: "block text-sm font-medium text-gray-700 mb-1" %>
+        <%= f.select :user_email,
+              @users.map { |u| ["#{u.name} (#{u.email})", u.email] },
+              { include_blank: "Select a user..." },
+              class: "w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-green-camp" %>
+      </div>
+
+      <div>
+        <%= f.label :zip_file, "Zip File", class: "block text-sm font-medium text-gray-700 mb-1" %>
+        <%= f.file_field :zip_file, accept: ".zip",
+              class: "w-full text-sm text-gray-500 file:mr-3 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-medium file:bg-green-camp file:text-white hover:file:bg-green-dark" %>
+        <p class="text-xs text-gray-400 mt-1">Each image/PDF in the zip becomes one receipt. Subfolders are flattened.</p>
+      </div>
+
+      <div class="pt-2">
+        <%= f.submit "Upload & Queue Analysis",
+              class: "bg-green-camp text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-green-dark cursor-pointer" %>
+        <%= link_to "Cancel", receipts_path, class: "ml-3 text-sm text-gray-500 hover:text-gray-700" %>
+      </div>
+    </div>
+  <% end %>
+</div>

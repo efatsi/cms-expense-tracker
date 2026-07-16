@@ -4,7 +4,11 @@ Rails.application.routes.draw do
   root "receipts#index"
 
   resources :receipts do
-    collection { post :analyze }
+    collection do
+      post :analyze
+      get  :bulk_upload
+      post :bulk_upload
+    end
     resources :expenses, only: [ :new, :create, :edit, :update, :destroy ]
   end
 
@@ -14,7 +18,7 @@ Rails.application.routes.draw do
     resources :users
     resources :expense_categories
     resources :payment_methods
-    resources :charges do
+    resources :charges, only: [ :index, :show ] do
       collection { post :import }
       member { patch :match }
     end

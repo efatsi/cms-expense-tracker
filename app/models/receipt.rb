@@ -6,7 +6,7 @@ class Receipt < ApplicationRecord
   has_many :charges
   has_one_attached :file
 
-  enum :status, { pending: 0, matched: 1 }, default: :pending
+  enum :status, { pending: 0, matched: 1, processing: 2 }, default: :pending
 
   validates :vendor, :expense_date, :payment_method, presence: true
   validates :expenses, length: { minimum: 1, message: "must have at least one expense" }

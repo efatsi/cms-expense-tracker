@@ -43,7 +43,7 @@
     </thead>
     <tbody class="divide-y divide-gray-100">
       <% @charges.each do |charge| %>
-        <tr class="hover:bg-gray-50">
+        <tr class="hover:bg-gray-50 cursor-pointer" data-controller="row-link" data-href="<%= admin_charge_path(charge) %>" data-action="click->row-link#navigate">
           <td class="px-4 py-3"><%= charge.transaction_date.strftime("%b %d, %Y") %></td>
           <td class="px-4 py-3 text-gray-600"><%= charge.payment_method.display_name %></td>
           <td class="px-4 py-3"><%= charge.description %></td>

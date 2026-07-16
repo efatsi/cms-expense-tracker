@@ -3,6 +3,10 @@ require "csv"
 class Admin::ChargesController < Admin::BaseController
   before_action :set_charge, only: [ :match ]
 
+  def show
+    @charge = Charge.includes(:payment_method, :receipt).find(params[:id])
+  end
+
   def index
     @charges = Charge.includes(:payment_method, :receipt)
                      .order(transaction_date: :desc)
@@ -81,7 +85,7 @@ class Admin::ChargesController < Admin::BaseController
   end
 
   def parse_date(value)
-    Date.parse(value.to_s)
+    Date.strptime(value.to_s, "%m/%d/%Y")
   rescue ArgumentError, TypeError
     nil
   end
