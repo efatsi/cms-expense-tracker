@@ -3,7 +3,8 @@ class Receipt < ApplicationRecord
   belongs_to :payment_method
   has_many :expenses, dependent: :destroy
   accepts_nested_attributes_for :expenses, allow_destroy: true, reject_if: :all_blank
-  has_many :charges
+  has_many :charge_receipts, dependent: :destroy
+  has_many :charges, through: :charge_receipts
   has_one_attached :file
 
   enum :status, { pending: 0, matched: 1, processing: 2 }, default: :pending

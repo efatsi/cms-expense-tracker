@@ -11,11 +11,19 @@
       <h1 class="text-xl font-semibold"><%= @receipt.vendor %></h1>
       <p class="text-gray-500 text-sm mt-1"><%= @receipt.expense_date.strftime("%B %d, %Y") %></p>
     </div>
-    <% if current_user.admin? %>
-      <span class="inline-flex px-3 py-1 rounded-full text-sm font-medium <%= @receipt.matched? ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800' %>">
-        <%= @receipt.status.capitalize %>
-      </span>
-    <% end %>
+    <div class="flex items-center gap-3">
+      <% if @receipt.approved_at.nil? %>
+        <%= button_to "Approve Categorization", approve_receipt_path(@receipt), method: :post,
+              class: "bg-teal-600 text-white px-3 py-1.5 rounded text-sm cursor-pointer hover:bg-teal-700" %>
+      <% else %>
+        <span class="text-xs text-gray-400">Categorized <%= @receipt.approved_at.strftime("%b %d") %></span>
+      <% end %>
+      <% if current_user.admin? %>
+        <span class="inline-flex px-3 py-1 rounded-full text-sm font-medium <%= @receipt.matched? ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800' %>">
+          <%= @receipt.status.capitalize %>
+        </span>
+      <% end %>
+    </div>
   </div>
 
   <dl class="grid grid-cols-2 gap-4 text-sm">
@@ -51,7 +59,10 @@
     <tbody class="divide-y divide-gray-100">
       <% @receipt.expenses.each do |expense| %>
         <tr>
-          <td class="px-6 py-3 text-gray-600"><%= expense.expense_category.name %></td>
+          <td class="px-6 py-3">
+            <div class="text-xs text-gray-400"><%= expense.expense_category.section %></div>
+            <div class="text-gray-600"><%= expense.expense_category.name %></div>
+          </td>
           <td class="px-6 py-3"><%= expense.description %></td>
           <td class="px-6 py-3 text-right font-medium"><%= number_to_currency(expense.amount) %></td>
         </tr>

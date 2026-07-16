@@ -66,7 +66,7 @@ class ReceiptAnalysisService
       - "date": date of purchase in YYYY-MM-DD format, default to #{Date.today} if unclear
       - "expenses": an array containing EXACTLY ONE item summarizing the entire receipt, with:
           - "description": 2-4 word summary of what was purchased (e.g. "Cleaning supplies", "Pet food", "Office paper")
-          - "amount": the total amount of the receipt (number, no currency symbol)
+          - "amount": the grand total charged (the largest/final total on the receipt, including tax — not a subtotal or individual line item)
           - "category": pick the single best match from this list — most common are "Supplies (Facilities)", "Supplies (Program)", "Supplies (Healthcare)", "Food (Food Service)" — full list: #{categories_text}
 
       Return ONLY valid JSON. No explanation, no markdown, no code fences.
@@ -80,7 +80,7 @@ class ReceiptAnalysisService
       - "date": date of purchase in YYYY-MM-DD format, default to #{Date.today} if unclear
       - "expenses": an array containing EXACTLY ONE item summarizing the entire receipt, with:
           - "description": 2-4 word summary of what was purchased (e.g. "Cleaning supplies", "Pet food", "Office paper")
-          - "amount": the total amount of the receipt (number, no currency symbol)
+          - "amount": the grand total charged (the largest/final total on the receipt, including tax — not a subtotal or individual line item)
           - "category": pick the single best match from this list — most common are "Supplies (Facilities)", "Supplies (Program)", "Supplies (Healthcare)", "Food (Food Service)" — full list: #{categories_text}
 
       Return ONLY valid JSON. No explanation, no markdown, no code fences.

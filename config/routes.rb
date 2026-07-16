@@ -9,6 +9,7 @@ Rails.application.routes.draw do
       get  :bulk_upload
       post :bulk_upload
     end
+    member { post :approve }
     resources :expenses, only: [ :new, :create, :edit, :update, :destroy ]
   end
 
@@ -20,7 +21,11 @@ Rails.application.routes.draw do
     resources :payment_methods
     resources :charges, only: [ :index, :show ] do
       collection { post :import }
-      member { patch :match }
+      member do
+        post :associate
+        patch :lock_in
+        post :save_expenses
+      end
     end
   end
 

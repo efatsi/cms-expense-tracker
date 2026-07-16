@@ -100,6 +100,20 @@
     </template>
   </div>
 
+  <% if receipt.file.attached? %>
+    <div class="bg-white rounded-lg border border-gray-200 p-6 mb-4">
+      <h2 class="font-semibold mb-3">Attached Receipt</h2>
+      <% if receipt.file.image? %>
+        <%= image_tag receipt.file, class: "max-w-md rounded border" %>
+      <% elsif receipt.file.content_type == "application/pdf" %>
+        <iframe src="<%= rails_blob_path(receipt.file, disposition: "inline") %>#navpanes=0"
+                class="w-full rounded border border-gray-200"
+                style="height: 700px;"
+                title="Receipt PDF"></iframe>
+      <% end %>
+    </div>
+  <% end %>
+
   <div class="flex justify-end gap-3">
     <%= link_to "Cancel", receipts_path, class: "px-4 py-2 text-sm text-gray-600 hover:text-gray-900" %>
     <%= f.submit class: "bg-green-camp text-white px-6 py-2 rounded-md text-sm font-medium hover:bg-green-dark cursor-pointer" %>

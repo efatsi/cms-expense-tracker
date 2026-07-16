@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_07_13_045706) do
+ActiveRecord::Schema[8.1].define(version: 2026_07_16_155737) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -42,17 +42,36 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_13_045706) do
     t.index ["blob_id", "variation_digest"], name: "index_active_storage_variant_records_uniqueness", unique: true
   end
 
+  create_table "charge_expenses", force: :cascade do |t|
+    t.decimal "amount", precision: 10, scale: 2
+    t.bigint "charge_id", null: false
+    t.datetime "created_at", null: false
+    t.string "description"
+    t.bigint "expense_category_id", null: false
+    t.datetime "updated_at", null: false
+    t.index ["charge_id"], name: "index_charge_expenses_on_charge_id"
+    t.index ["expense_category_id"], name: "index_charge_expenses_on_expense_category_id"
+  end
+
+  create_table "charge_receipts", force: :cascade do |t|
+    t.bigint "charge_id", null: false
+    t.datetime "created_at", null: false
+    t.bigint "receipt_id", null: false
+    t.datetime "updated_at", null: false
+    t.index ["charge_id", "receipt_id"], name: "index_charge_receipts_on_charge_id_and_receipt_id", unique: true
+    t.index ["charge_id"], name: "index_charge_receipts_on_charge_id"
+    t.index ["receipt_id"], name: "index_charge_receipts_on_receipt_id"
+  end
+
   create_table "charges", force: :cascade do |t|
     t.decimal "amount", precision: 10, scale: 2
     t.datetime "created_at", null: false
     t.string "description"
     t.datetime "matched_at"
     t.bigint "payment_method_id", null: false
-    t.bigint "receipt_id"
     t.date "transaction_date"
     t.datetime "updated_at", null: false
     t.index ["payment_method_id"], name: "index_charges_on_payment_method_id"
-    t.index ["receipt_id"], name: "index_charges_on_receipt_id"
   end
 
   create_table "expense_categories", force: :cascade do |t|
@@ -82,6 +101,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_13_045706) do
   end
 
   create_table "receipts", force: :cascade do |t|
+    t.datetime "approved_at"
     t.datetime "created_at", null: false
     t.date "expense_date"
     t.text "notes"
@@ -122,8 +142,11 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_13_045706) do
 
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
+  add_foreign_key "charge_expenses", "charges"
+  add_foreign_key "charge_expenses", "expense_categories"
+  add_foreign_key "charge_receipts", "charges"
+  add_foreign_key "charge_receipts", "receipts"
   add_foreign_key "charges", "payment_methods"
-  add_foreign_key "charges", "receipts"
   add_foreign_key "expenses", "expense_categories"
   add_foreign_key "expenses", "receipts"
   add_foreign_key "receipts", "payment_methods"

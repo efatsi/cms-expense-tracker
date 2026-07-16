@@ -1,14 +1,18 @@
 require "csv"
 
 class Admin::ChargesController < Admin::BaseController
-  before_action :set_charge, only: [ :match ]
+  before_action :set_charge, only: [ :show, :associate, :lock_in, :save_expenses ]
 
   def show
-    @charge = Charge.includes(:payment_method, :receipt).find(params[:id])
+    @charge = Charge.includes(:payment_method, :charge_receipts,
+                               charge_expenses: :expense_category,
+                               receipts: { expenses: :expense_category }).find(params[:id])
+    @nearby_receipts = @charge.nearby_receipts
+    @associated_ids = @charge.receipts.pluck(:id).to_set
   end
 
   def index
-    @charges = Charge.includes(:payment_method, :receipt)
+    @charges = Charge.includes(:payment_method)
                      .order(transaction_date: :desc)
 
     if params[:unmatched_only]
@@ -35,13 +39,45 @@ class Admin::ChargesController < Admin::BaseController
     redirect_to admin_charges_path, alert: "Invalid CSV: #{e.message}"
   end
 
-  def match
+  def associate
     receipt = Receipt.find(params[:receipt_id])
-    @charge.update!(receipt: receipt, matched_at: Time.current)
-    receipt.update!(status: :matched)
-    redirect_to admin_charges_path, notice: "Charge matched to receipt ##{receipt.id}."
+    if @charge.receipts.include?(receipt)
+      @charge.receipts.delete(receipt)
+    else
+      @charge.receipts << receipt
+    end
+    redirect_to admin_charge_path(@charge)
   rescue ActiveRecord::RecordNotFound
-    redirect_to admin_charges_path, alert: "Receipt not found."
+    redirect_to admin_charge_path(@charge), alert: "Receipt not found."
+  end
+
+  def save_expenses
+    rows = (params[:charge_expenses] || {}).values
+    rows = rows.reject { |r| r[:amount].blank? && r[:description].blank? }
+
+    if rows.empty?
+      return redirect_to admin_charge_path(@charge), alert: "Please add at least one expense."
+    end
+
+    ActiveRecord::Base.transaction do
+      @charge.charge_expenses.destroy_all
+      rows.each do |row|
+        @charge.charge_expenses.create!(
+          expense_category_id: row[:expense_category_id],
+          description: row[:description],
+          amount: row[:amount]
+        )
+      end
+      @charge.update!(matched_at: Time.current)
+    end
+
+    redirect_to admin_charge_path(@charge), notice: "Expenses saved and charge marked as matched."
+  end
+
+  def lock_in
+    @charge.update!(matched_at: Time.current)
+    @charge.receipts.each { |r| r.update!(status: :matched) }
+    redirect_to admin_charge_path(@charge), notice: "Charge locked in."
   end
 
   private

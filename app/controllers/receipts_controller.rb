@@ -1,12 +1,12 @@
 class ReceiptsController < ApplicationController
-  before_action :set_receipt, only: [ :show, :edit, :update, :destroy ]
-  before_action :authorize_receipt!, only: [ :show, :edit, :update, :destroy ]
+  before_action :set_receipt, only: [ :show, :edit, :update, :destroy, :approve ]
+  before_action :authorize_receipt!, only: [ :show, :edit, :update, :destroy, :approve ]
   before_action :require_admin!, only: [ :bulk_upload ]
 
   def index
     @show_all = current_user.admin? && params[:all] == "1"
     @receipts = @show_all ? Receipt.all : current_user.receipts
-    @receipts = @receipts.includes(:user, :payment_method, :expenses)
+    @receipts = @receipts.includes(:user, :payment_method, expenses: :expense_category)
                          .order(expense_date: :desc)
   end
 
@@ -31,11 +31,16 @@ class ReceiptsController < ApplicationController
   end
 
   def update
-    if @receipt.update(receipt_params)
+    if @receipt.update(receipt_params.merge(approved_at: Time.current))
       redirect_to @receipt, notice: "Receipt updated."
     else
       render :edit, status: :unprocessable_entity
     end
+  end
+
+  def approve
+    @receipt.update!(approved_at: Time.current)
+    redirect_to @receipt, notice: "Receipt categorization approved."
   end
 
   def destroy

@@ -1,18 +1,21 @@
 class Charge < ApplicationRecord
   belongs_to :payment_method
-  belongs_to :receipt, optional: true
+  has_many :charge_receipts, dependent: :destroy
+  has_many :receipts, through: :charge_receipts
+  has_many :charge_expenses, dependent: :destroy
 
-  scope :unmatched, -> { where(receipt: nil) }
+  scope :unmatched, -> { where(matched_at: nil) }
 
   validates :transaction_date, :amount, :description, presence: true
 
-  def suggested_receipts
-    return Receipt.none unless transaction_date && amount
+  def nearby_receipts
+    return Receipt.none unless transaction_date
 
     date_range = (transaction_date - 3.days)..(transaction_date + 3.days)
-    Receipt.joins(:expenses)
-           .where(payment_method: payment_method, expense_date: date_range)
-           .group("receipts.id")
-           .having("SUM(expenses.amount) BETWEEN ? AND ?", amount * 0.99, amount * 1.01)
+    Receipt.where(expense_date: date_range, payment_method: payment_method).where.not(status: :matched).order(:expense_date)
+  end
+
+  def accounted_total
+    receipts.joins(:expenses).sum("expenses.amount")
   end
 end

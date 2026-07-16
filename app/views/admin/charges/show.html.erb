@@ -8,7 +8,7 @@
       <h1 class="text-xl font-semibold"><%= @charge.description %></h1>
       <p class="text-gray-500 text-sm mt-1"><%= @charge.transaction_date.strftime("%B %d, %Y") %></p>
     </div>
-    <% if @charge.receipt %>
+    <% if @charge.matched_at.present? %>
       <span class="inline-flex px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800">Matched</span>
     <% else %>
       <span class="inline-flex px-3 py-1 rounded-full text-sm font-medium bg-yellow-100 text-yellow-800">Unmatched</span>
@@ -33,43 +33,194 @@
   </dl>
 </div>
 
-<% if @charge.receipt %>
-  <div class="bg-white rounded-lg border border-gray-200 p-6 mb-6">
-    <h2 class="font-semibold mb-4">Matched Receipt</h2>
-    <div class="flex items-center justify-between">
-      <div>
-        <p class="font-medium"><%= @charge.receipt.vendor %></p>
-        <p class="text-sm text-gray-500 mt-0.5"><%= @charge.receipt.expense_date.strftime("%B %d, %Y") %> · <%= number_to_currency(@charge.receipt.total_amount) %></p>
+<% if @charge.matched_at.present? %>
+  <%
+    all_expenses = @charge.receipts.flat_map(&:expenses) + @charge.charge_expenses
+  %>
+  <% if all_expenses.any? %>
+    <div class="bg-white rounded-lg border border-gray-200 overflow-hidden mb-6">
+      <div class="px-6 py-4 border-b border-gray-200">
+        <h2 class="font-semibold">Expenses</h2>
       </div>
-      <%= link_to "View Receipt →", @charge.receipt, class: "text-sm text-green-camp hover:underline" %>
+      <table class="w-full text-sm">
+        <thead class="bg-gray-50 border-b border-gray-200">
+          <tr>
+            <th class="text-left px-4 py-3 font-medium text-gray-600">Category</th>
+            <th class="text-left px-4 py-3 font-medium text-gray-600">Description</th>
+            <th class="text-right px-4 py-3 font-medium text-gray-600">Amount</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-100">
+          <% all_expenses.each do |expense| %>
+            <tr>
+              <td class="px-4 py-3">
+                <div class="text-xs text-gray-400"><%= expense.expense_category.section %></div>
+                <div><%= expense.expense_category.name %></div>
+              </td>
+              <td class="px-4 py-3 text-gray-600"><%= expense.description %></td>
+              <td class="px-4 py-3 text-right font-medium"><%= number_to_currency(expense.amount) %></td>
+            </tr>
+          <% end %>
+        </tbody>
+        <tfoot class="border-t border-gray-200 bg-gray-50">
+          <tr>
+            <td colspan="2" class="px-4 py-3 text-right font-semibold text-sm">Total</td>
+            <td class="px-4 py-3 text-right font-bold"><%= number_to_currency(all_expenses.sum(&:amount)) %></td>
+          </tr>
+        </tfoot>
+      </table>
     </div>
-  </div>
+  <% end %>
+
+  <% if @charge.receipts.any? %>
+    <div class="bg-white rounded-lg border border-gray-200 overflow-hidden mb-6">
+      <div class="px-6 py-4 border-b border-gray-200">
+        <h2 class="font-semibold">Matched Receipts</h2>
+      </div>
+      <table class="w-full text-sm">
+        <thead class="bg-gray-50 border-b border-gray-200">
+          <tr>
+            <th class="px-4 py-3"></th>
+            <th class="text-left px-4 py-3 font-medium text-gray-600">Date</th>
+            <th class="text-left px-4 py-3 font-medium text-gray-600">Employee</th>
+            <th class="text-left px-4 py-3 font-medium text-gray-600">Vendor</th>
+            <th class="text-right px-4 py-3 font-medium text-gray-600">Amount</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-100">
+          <% @charge.receipts.each do |receipt| %>
+            <tr class="cursor-pointer hover:bg-gray-50"
+                data-controller="row-link" data-href="<%= receipt_path(receipt) %>" data-new-tab="true" data-action="click->row-link#navigate">
+              <td class="px-4 py-3">
+                <% if receipt.file.attached? && receipt.file.image? %>
+                  <%= image_tag receipt.file, class: "h-12 w-16 object-cover rounded border border-gray-200" %>
+                <% elsif receipt.file.attached? %>
+                  <div class="h-12 w-16 flex items-center justify-center rounded border border-gray-200 bg-gray-50 text-xs text-gray-400">PDF</div>
+                <% else %>
+                  <div class="h-12 w-16 rounded border border-dashed border-gray-200 bg-gray-50"></div>
+                <% end %>
+              </td>
+              <td class="px-4 py-3"><%= receipt.expense_date.strftime("%b %d, %Y") %></td>
+              <td class="px-4 py-3 text-gray-600"><%= receipt.user.name %></td>
+              <td class="px-4 py-3"><%= receipt.vendor %></td>
+              <td class="px-4 py-3 text-right font-medium"><%= number_to_currency(receipt.total_amount) %></td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    </div>
+  <% end %>
 <% else %>
-  <div class="bg-white rounded-lg border border-gray-200 p-6">
-    <h2 class="font-semibold mb-4">Match to Receipt</h2>
-    <% suggestions = @charge.suggested_receipts %>
-    <% if suggestions.any? %>
-      <p class="text-sm text-gray-500 mb-3">Suggested match based on date and amount:</p>
-      <div class="mb-4 space-y-2">
-        <% suggestions.each do |receipt| %>
-          <%= form_with url: match_admin_charge_path(@charge), method: :patch, class: "flex items-center justify-between p-3 rounded-lg border border-green-200 bg-green-50" do |f| %>
-            <div>
-              <p class="text-sm font-medium"><%= receipt.vendor %></p>
-              <p class="text-xs text-gray-500"><%= receipt.expense_date.strftime("%B %d, %Y") %> · <%= number_to_currency(receipt.total_amount) %> · <%= receipt.user.name %></p>
-            </div>
-            <%= hidden_field_tag :receipt_id, receipt.id %>
-            <%= submit_tag "Match", class: "bg-green-camp text-white px-3 py-1.5 rounded text-sm cursor-pointer hover:bg-green-dark" %>
+  <div class="bg-white rounded-lg border border-gray-200 overflow-hidden">
+    <div class="flex items-center justify-between px-6 py-4 border-b border-gray-200">
+      <h2 class="font-semibold">Nearby Receipts</h2>
+      <div class="flex items-center gap-4">
+        <span class="text-sm text-gray-600">
+          <%= number_to_currency(@charge.accounted_total) %> of <%= number_to_currency(@charge.amount) %>
+        </span>
+        <% if @associated_ids.any? %>
+          <%= form_with url: lock_in_admin_charge_path(@charge), method: :patch do |f| %>
+            <%= submit_tag "Lock In", class: "bg-green-camp text-white px-4 py-1.5 rounded text-sm cursor-pointer hover:bg-green-dark" %>
           <% end %>
         <% end %>
       </div>
-      <p class="text-xs text-gray-400 mb-2">Or choose manually:</p>
+    </div>
+
+    <% if @nearby_receipts.any? %>
+      <table class="w-full text-sm">
+        <thead class="bg-gray-50 border-b border-gray-200">
+          <tr>
+            <th class="text-left px-4 py-3 font-medium text-gray-600">Date</th>
+            <th class="text-left px-4 py-3 font-medium text-gray-600">Employee</th>
+            <th class="text-left px-4 py-3 font-medium text-gray-600">Vendor</th>
+            <th class="text-right px-4 py-3 font-medium text-gray-600">Amount</th>
+            <th class="text-left px-4 py-3 font-medium text-gray-600">Status</th>
+            <th class="px-4 py-3 font-medium text-gray-600"></th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-100">
+          <% @nearby_receipts.each do |receipt| %>
+            <% associated = @associated_ids.include?(receipt.id) %>
+            <% date_match = receipt.expense_date == @charge.transaction_date %>
+            <tr class="cursor-pointer hover:brightness-95 <%= date_match ? 'bg-yellow-50' : '' %> <%= associated ? 'border-l-4 border-l-green-400' : '' %>"
+                data-controller="row-link" data-href="<%= receipt_path(receipt) %>" data-new-tab="true" data-action="click->row-link#navigate">
+              <td class="px-4 py-3"><%= receipt.expense_date.strftime("%b %d, %Y") %></td>
+              <td class="px-4 py-3 text-gray-600"><%= receipt.user.name %></td>
+              <td class="px-4 py-3"><%= receipt.vendor %></td>
+              <td class="px-4 py-3 text-right font-medium"><%= number_to_currency(receipt.total_amount) %></td>
+              <td class="px-4 py-3">
+                <span class="inline-flex px-2 py-0.5 rounded-full text-xs font-medium
+                  <%= receipt.matched? ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-600' %>">
+                  <%= receipt.status.capitalize %>
+                </span>
+              </td>
+              <td class="px-4 py-3 text-right">
+                <%= form_with url: associate_admin_charge_path(@charge), method: :post do |f| %>
+                  <%= hidden_field_tag :receipt_id, receipt.id %>
+                  <%= submit_tag associated ? "Remove" : "Associate",
+                        class: "text-xs px-3 py-1 rounded border cursor-pointer #{associated ? 'border-red-300 text-red-600 hover:bg-red-50' : 'border-green-300 text-green-700 hover:bg-green-50'}" %>
+                <% end %>
+              </td>
+            </tr>
+          <% end %>
+        </tbody>
+      </table>
+    <% else %>
+      <p class="text-gray-500 text-center py-8 text-sm">No receipts within ±3 days.</p>
     <% end %>
-    <%= form_with url: match_admin_charge_path(@charge), method: :patch, class: "flex gap-2 items-center" do |f| %>
-      <%= select_tag "receipt_id",
-            options_from_collection_for_select(Receipt.order(expense_date: :desc), :id, ->(r) { "#{r.vendor} – #{r.expense_date} (#{number_to_currency(r.total_amount)})" }),
-            include_blank: "Select receipt...",
-            class: "flex-1 border border-gray-300 rounded-md px-3 py-2 text-sm" %>
-      <%= submit_tag "Match", class: "bg-green-camp text-white px-4 py-2 rounded-md text-sm cursor-pointer hover:bg-green-dark" %>
+  </div>
+
+  <div class="bg-white rounded-lg border border-gray-200 p-6 mt-6" data-controller="expense-form">
+    <div class="flex items-center justify-between mb-4">
+      <h2 class="font-semibold">Direct Expenses</h2>
+      <button type="button" data-action="expense-form#addRow" class="text-sm text-green-camp hover:text-green-dark font-medium">+ Add Expense</button>
+    </div>
+    <p class="text-sm text-gray-500 mb-4">No receipt to match? Enter expenses directly. Submitting will mark this charge as matched.</p>
+
+    <%= form_with url: save_expenses_admin_charge_path(@charge), method: :post do |f| %>
+      <div data-expense-form-target="rows">
+        <div class="expense-row grid grid-cols-12 gap-2 items-start mb-2">
+          <div class="col-span-3">
+            <select name="charge_expenses[0][expense_category_id]" class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm">
+              <option value="">Category</option>
+              <%= grouped_expense_category_options %>
+            </select>
+          </div>
+          <div class="col-span-6">
+            <input type="text" name="charge_expenses[0][description]" placeholder="Description" class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm">
+          </div>
+          <div class="col-span-2">
+            <input type="number" name="charge_expenses[0][amount]" placeholder="0.00" step="0.01" value="<%= @charge.amount %>" class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm">
+          </div>
+          <div class="col-span-1 flex justify-center pt-2">
+            <button type="button" data-action="expense-form#removeRow" class="text-red-400 hover:text-red-600 text-lg leading-none">&times;</button>
+          </div>
+        </div>
+      </div>
+
+      <template data-expense-form-target="template">
+        <div class="expense-row grid grid-cols-12 gap-2 items-start mb-2">
+          <div class="col-span-3">
+            <select name="charge_expenses[NEW_INDEX][expense_category_id]" class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm">
+              <option value="">Category</option>
+              <%= grouped_expense_category_options %>
+            </select>
+          </div>
+          <div class="col-span-6">
+            <input type="text" name="charge_expenses[NEW_INDEX][description]" placeholder="Description" class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm">
+          </div>
+          <div class="col-span-2">
+            <input type="number" name="charge_expenses[NEW_INDEX][amount]" placeholder="0.00" step="0.01" class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm">
+          </div>
+          <div class="col-span-1 flex justify-center pt-2">
+            <button type="button" data-action="expense-form#removeRow" class="text-red-400 hover:text-red-600 text-lg leading-none">&times;</button>
+          </div>
+        </div>
+      </template>
+
+      <div class="flex justify-end mt-4">
+        <%= submit_tag "Save Expenses & Mark Matched", class: "bg-green-camp text-white px-4 py-2 rounded-md text-sm font-medium cursor-pointer hover:bg-green-dark" %>
+      </div>
     <% end %>
   </div>
 <% end %>
