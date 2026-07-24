@@ -27,6 +27,42 @@ class Admin::ChargesController < Admin::BaseController
     @payment_methods = PaymentMethod.order(:name)
   end
 
+  def export
+    charges = Charge.includes(:payment_method, charge_expenses: :expense_category, receipts: { expenses: :expense_category })
+                    .order(transaction_date: :desc)
+    charges = charges.where(payment_method_id: params[:payment_method_id]) if params[:payment_method_id].present?
+
+    csv_data = CSV.generate(headers: true) do |csv|
+      csv << [ "Date", "Payment Method", "Description", "Amount", "Status", "Expense Category", "Expense Description", "Expense Amount" ]
+
+      charges.each do |charge|
+        expenses = charge.receipts.flat_map(&:expenses) + charge.charge_expenses
+        status = charge.matched_at? ? "Matched" : "Unmatched"
+
+        if expenses.size <= 1
+          exp = expenses.first
+          csv << [
+            charge.transaction_date.strftime("%m/%d/%Y"),
+            charge.payment_method.display_name,
+            charge.description,
+            charge.amount,
+            status,
+            exp&.expense_category&.name,
+            exp&.description,
+            exp&.amount
+          ]
+        else
+          csv << [ charge.transaction_date.strftime("%m/%d/%Y"), charge.payment_method.display_name, charge.description, charge.amount, status, nil, nil, nil ]
+          expenses.each do |exp|
+            csv << [ nil, nil, nil, nil, nil, exp.expense_category&.name, exp.description, exp.amount ]
+          end
+        end
+      end
+    end
+
+    send_data csv_data, filename: "charges-#{Date.today}.csv", type: "text/csv", disposition: "attachment"
+  end
+
   def import
     if request.get?
       @payment_methods = PaymentMethod.order(:name)

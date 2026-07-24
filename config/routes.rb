@@ -23,6 +23,7 @@ Rails.application.routes.draw do
       collection do
         get :import
         post :import
+        get :export
       end
       member do
         post :associate
