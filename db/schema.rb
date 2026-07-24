@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_07_16_155737) do
+ActiveRecord::Schema[8.1].define(version: 2026_07_22_025738) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -74,6 +74,15 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_16_155737) do
     t.index ["payment_method_id"], name: "index_charges_on_payment_method_id"
   end
 
+  create_table "csv_statements", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.integer "imported_count"
+    t.bigint "payment_method_id", null: false
+    t.integer "skipped_count"
+    t.datetime "updated_at", null: false
+    t.index ["payment_method_id"], name: "index_csv_statements_on_payment_method_id"
+  end
+
   create_table "expense_categories", force: :cascade do |t|
     t.boolean "active", default: true, null: false
     t.datetime "created_at", null: false
@@ -102,6 +111,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_16_155737) do
 
   create_table "receipts", force: :cascade do |t|
     t.datetime "approved_at"
+    t.decimal "charges_total", precision: 10, scale: 2, default: "0.0", null: false
     t.datetime "created_at", null: false
     t.date "expense_date"
     t.text "notes"
@@ -147,6 +157,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_07_16_155737) do
   add_foreign_key "charge_receipts", "charges"
   add_foreign_key "charge_receipts", "receipts"
   add_foreign_key "charges", "payment_methods"
+  add_foreign_key "csv_statements", "payment_methods"
   add_foreign_key "expenses", "expense_categories"
   add_foreign_key "expenses", "receipts"
   add_foreign_key "receipts", "payment_methods"

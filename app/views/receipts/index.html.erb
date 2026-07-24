@@ -1,17 +1,8 @@
 <div class="flex items-center justify-between mb-6">
   <div class="flex items-center gap-4">
     <h1 class="text-2xl font-serif font-semibold">
-      <%= @show_all ? "All Receipts" : "My Receipts" %>
+      <%= @filtered_user ? "#{@filtered_user.name}'s Receipts" : (@show_all ? "All Receipts" : "My Receipts") %>
     </h1>
-    <% if current_user.admin? %>
-      <%= link_to @show_all ? receipts_path : receipts_path(all: 1),
-            class: "flex items-center gap-2 text-sm text-gray-500 hover:text-gray-700 select-none" do %>
-        <span class="relative inline-flex h-5 w-9 rounded-full transition-colors <%= @show_all ? 'bg-green-camp' : 'bg-gray-300' %>">
-          <span class="inline-block h-4 w-4 rounded-full bg-white shadow transform transition-transform mt-0.5 <%= @show_all ? 'translate-x-4' : 'translate-x-0.5' %>"></span>
-        </span>
-        Show all
-      <% end %>
-    <% end %>
   </div>
   <div class="flex items-center gap-2">
     <% if current_user.admin? %>
@@ -20,6 +11,22 @@
     <%= link_to "New Receipt", new_receipt_path, class: "bg-green-camp text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-green-dark" %>
   </div>
 </div>
+
+<% if current_user.admin? %>
+  <div class="flex items-center gap-4 mb-4">
+    <%= form_with url: receipts_path, method: :get, class: "flex items-center gap-3" do |f| %>
+      <%= select_tag :user_id,
+            options_for_select([["All Employees", ""]] + @users.map { |u| [u.name, u.id] }, params[:user_id]),
+            class: "border border-gray-300 rounded-md px-3 py-2 text-sm",
+            onchange: "this.form.submit()" %>
+      <label class="flex items-center gap-2 text-sm cursor-pointer">
+        <%= check_box_tag :unmatched_charges, "1", params[:unmatched_charges].present?,
+              class: "rounded", onchange: "this.form.submit()" %>
+        Unmatched to charges
+      </label>
+    <% end %>
+  </div>
+<% end %>
 
 <% if @receipts.empty? %>
   <p class="text-gray-500 text-center py-12">No receipts yet. <%= link_to "Submit your first receipt", new_receipt_path, class: "text-green-camp hover:underline" %>.</p>
@@ -38,6 +45,7 @@
           <th class="text-right px-4 py-3 font-medium text-gray-600">Total</th>
           <% if current_user.admin? %>
             <th class="text-left px-4 py-3 font-medium text-gray-600">Status</th>
+            <th class="text-left px-4 py-3 font-medium text-gray-600">Charges</th>
           <% end %>
         </tr>
       </thead>
@@ -74,6 +82,18 @@
                 <span class="inline-flex px-2 py-0.5 rounded-full text-xs font-medium <%= badge_class %>">
                   <%= badge_label %>
                 </span>
+              </td>
+              <td class="px-4 py-3">
+                <% charge_coverage = receipt.charges.sum(&:amount) %>
+                <% if charge_coverage >= receipt.total_amount %>
+                  <span class="inline-flex px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">Covered</span>
+                <% elsif charge_coverage > 0 %>
+                  <span class="inline-flex px-2 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-700">
+                    <%= number_to_currency(charge_coverage) %> / <%= number_to_currency(receipt.total_amount) %>
+                  </span>
+                <% else %>
+                  <span class="inline-flex px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-500">No charges</span>
+                <% end %>
               </td>
             <% end %>
           </tr>

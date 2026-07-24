@@ -19,13 +19,48 @@
   <p class="text-xs text-gray-500 mt-2">Expected CSV columns: Date, Amount, Description</p>
 </div>
 
+<% if @csv_statements.any? %>
+  <div class="bg-white rounded-lg border border-gray-200 p-6 mb-6">
+    <h2 class="font-semibold mb-4">Past Imports</h2>
+    <table class="w-full text-sm">
+      <thead class="border-b border-gray-200">
+        <tr>
+          <th class="text-left pb-2 font-medium text-gray-600">Date</th>
+          <th class="text-left pb-2 font-medium text-gray-600">Payment Method</th>
+          <th class="text-left pb-2 font-medium text-gray-600">Imported</th>
+          <th class="text-left pb-2 font-medium text-gray-600">Skipped</th>
+          <th class="text-left pb-2 font-medium text-gray-600">File</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-gray-100">
+        <% @csv_statements.each do |statement| %>
+          <tr>
+            <td class="py-2 pr-4"><%= statement.created_at.strftime("%b %d, %Y") %></td>
+            <td class="py-2 pr-4 text-gray-600"><%= statement.payment_method.display_name %></td>
+            <td class="py-2 pr-4"><%= statement.imported_count %> imported</td>
+            <td class="py-2 pr-4"><%= statement.skipped_count %> skipped</td>
+            <td class="py-2">
+              <% if statement.file.attached? %>
+                <%= link_to "Download", rails_blob_path(statement.file, disposition: "attachment"), class: "text-blue-600 hover:underline" %>
+              <% end %>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </div>
+<% end %>
+
 <div class="flex items-center gap-4 mb-4">
   <%= form_with url: admin_charges_path, method: :get, class: "flex items-center gap-3" do |f| %>
     <label class="flex items-center gap-2 text-sm cursor-pointer">
       <%= check_box_tag :unmatched_only, "1", params[:unmatched_only].present?, class: "rounded" %>
       Show unmatched only
     </label>
-    <%= submit_tag "Apply", class: "text-sm text-green-camp hover:underline bg-transparent border-0 cursor-pointer" %>
+    <%= select_tag :payment_method_id,
+          options_for_select([["Show All", ""]] + @payment_methods.map { |pm| [pm.name, pm.id] }, params[:payment_method_id]),
+          class: "border border-gray-300 rounded-md px-3 py-2 text-sm",
+          onchange: "this.form.submit()" %>
   <% end %>
 </div>
 

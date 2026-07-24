@@ -111,6 +111,7 @@
       </table>
 
       <%# Hidden modals — one per receipt %>
+
       <% @charge.receipts.each do |receipt| %>
         <div id="receipt-modal-<%= receipt.id %>" data-modal class="hidden fixed inset-0 z-50 flex items-start justify-center pt-16 px-4"
              style="background: rgba(0,0,0,0.5);"
@@ -172,14 +173,11 @@
     </div>
   <% end %>
 <% else %>
-  <div class="bg-white rounded-lg border border-gray-200 overflow-hidden">
+  <div class="bg-white rounded-lg border border-gray-200 overflow-hidden mb-6">
     <div class="flex items-center justify-between px-6 py-4 border-b border-gray-200">
       <h2 class="font-semibold">Nearby Receipts</h2>
       <div class="flex items-center gap-4">
-        <span class="text-sm text-gray-600">
-          <%= number_to_currency(@charge.accounted_total) %> of <%= number_to_currency(@charge.amount) %>
-        </span>
-        <% if @associated_ids.any? %>
+        <% if @associated_receipt %>
           <%= form_with url: lock_in_admin_charge_path(@charge), method: :patch do |f| %>
             <%= submit_tag "Lock In", class: "bg-green-camp text-white px-4 py-1.5 rounded text-sm cursor-pointer hover:bg-green-dark" %>
           <% end %>
@@ -196,19 +194,23 @@
             <th class="text-left px-4 py-3 font-medium text-gray-600">Vendor</th>
             <th class="text-right px-4 py-3 font-medium text-gray-600">Amount</th>
             <th class="text-left px-4 py-3 font-medium text-gray-600">Status</th>
-            <th class="px-4 py-3 font-medium text-gray-600"></th>
+            <th class="px-4 py-3"></th>
           </tr>
         </thead>
         <tbody class="divide-y divide-gray-100">
           <% @nearby_receipts.each do |receipt| %>
-            <% associated = @associated_ids.include?(receipt.id) %>
-            <% date_match = receipt.expense_date == @charge.transaction_date %>
-            <tr class="cursor-pointer hover:brightness-95 <%= date_match ? 'bg-yellow-50' : '' %> <%= associated ? 'border-l-4 border-l-green-400' : '' %>"
+            <% selected = @associated_receipt&.id == receipt.id %>
+            <tr class="cursor-pointer hover:brightness-95 <%= selected ? 'bg-green-50 border-l-4 border-l-green-400' : '' %>"
                 data-controller="row-link" data-href="<%= receipt_path(receipt) %>" data-new-tab="true" data-action="click->row-link#navigate">
               <td class="px-4 py-3"><%= receipt.expense_date.strftime("%b %d, %Y") %></td>
               <td class="px-4 py-3 text-gray-600"><%= receipt.user.name %></td>
               <td class="px-4 py-3"><%= receipt.vendor %></td>
-              <td class="px-4 py-3 text-right font-medium"><%= number_to_currency(receipt.total_amount) %></td>
+              <td class="px-4 py-3 text-right font-medium">
+                <% if receipt.charges_total > 0 %>
+                  <span class="text-gray-400 font-normal text-xs"><%= number_to_currency(receipt.total_amount - receipt.charges_total) %> of</span>
+                <% end %>
+                <%= number_to_currency(receipt.total_amount) %>
+              </td>
               <td class="px-4 py-3">
                 <span class="inline-flex px-2 py-0.5 rounded-full text-xs font-medium
                   <%= receipt.matched? ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-600' %>">
@@ -218,8 +220,8 @@
               <td class="px-4 py-3 text-right">
                 <%= form_with url: associate_admin_charge_path(@charge), method: :post do |f| %>
                   <%= hidden_field_tag :receipt_id, receipt.id %>
-                  <%= submit_tag associated ? "Remove" : "Associate",
-                        class: "text-xs px-3 py-1 rounded border cursor-pointer #{associated ? 'border-red-300 text-red-600 hover:bg-red-50' : 'border-green-300 text-green-700 hover:bg-green-50'}" %>
+                  <%= submit_tag selected ? "Remove" : "Select",
+                        class: "text-xs px-3 py-1 rounded border cursor-pointer #{selected ? 'border-red-300 text-red-600 hover:bg-red-50' : 'border-green-300 text-green-700 hover:bg-green-50'}" %>
                 <% end %>
               </td>
             </tr>
@@ -227,11 +229,11 @@
         </tbody>
       </table>
     <% else %>
-      <p class="text-gray-500 text-center py-8 text-sm">No receipts within ±3 days.</p>
+      <p class="text-gray-500 text-center py-8 text-sm">No receipts within the past 4 days.</p>
     <% end %>
   </div>
 
-  <div class="bg-white rounded-lg border border-gray-200 p-6 mt-6" data-controller="expense-form">
+  <div class="bg-white rounded-lg border border-gray-200 p-6" data-controller="expense-form">
     <div class="flex items-center justify-between mb-4">
       <h2 class="font-semibold">Direct Expenses</h2>
       <button type="button" data-action="expense-form#addRow" class="text-sm text-green-camp hover:text-green-dark font-medium">+ Add Expense</button>

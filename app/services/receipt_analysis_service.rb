@@ -66,8 +66,8 @@ class ReceiptAnalysisService
       - "date": date of purchase in YYYY-MM-DD format, default to #{Date.today} if unclear
       - "expenses": an array containing EXACTLY ONE item summarizing the entire receipt, with:
           - "description": 2-4 word summary of what was purchased (e.g. "Cleaning supplies", "Pet food", "Office paper")
-          - "amount": the grand total charged (the largest/final total on the receipt, including tax — not a subtotal or individual line item)
-          - "category": pick the single best match from this list — most common are "Supplies (Facilities)", "Supplies (Program)", "Supplies (Healthcare)", "Food (Food Service)" — full list: #{categories_text}
+          - "amount": the total amount the customer paid. Look for labels like "Order Total", "Grand Total", "Total", or "Amount Charged" — these are the authoritative final amount. If the receipt is an image and any text or amount appears highlighted or in a distinct color, that highlighted value is the grand total. If you see separate "Subtotal" and "Tax" lines, ADD them together. Do NOT use a line-item TOTAL column from a table — that is a per-item price, not the invoice total.
+          - "category": pick the single best match from this list — use the exact category name. Common mappings: hardware/building/facility supplies → "Building Maintenance / Repairs"; cleaning supplies → "Cleaning Supplies"; food/groceries → "Food"; kitchen supplies → "Kitchen Supplies"; pillbox/pill organizer/medical supplies → "Supplies" (Healthcare); activity/camp/program supplies → "Supplies" (Program); clothing/uniforms/merch → "Merch + Uniforms". Only use "Miscellaneous" if nothing else fits. Full list: #{categories_text}
 
       Return ONLY valid JSON. No explanation, no markdown, no code fences.
     PROMPT
@@ -80,8 +80,8 @@ class ReceiptAnalysisService
       - "date": date of purchase in YYYY-MM-DD format, default to #{Date.today} if unclear
       - "expenses": an array containing EXACTLY ONE item summarizing the entire receipt, with:
           - "description": 2-4 word summary of what was purchased (e.g. "Cleaning supplies", "Pet food", "Office paper")
-          - "amount": the grand total charged (the largest/final total on the receipt, including tax — not a subtotal or individual line item)
-          - "category": pick the single best match from this list — most common are "Supplies (Facilities)", "Supplies (Program)", "Supplies (Healthcare)", "Food (Food Service)" — full list: #{categories_text}
+          - "amount": the total amount the customer paid. Look for labels like "Order Total", "Grand Total", "Total", or "Amount Charged" — these are the authoritative final amount. If the receipt is an image and any text or amount appears highlighted or in a distinct color, that highlighted value is the grand total. If you see separate "Subtotal" and "Tax" lines, ADD them together. Do NOT use a line-item TOTAL column from a table — that is a per-item price, not the invoice total.
+          - "category": pick the single best match from this list — use the exact category name. Common mappings: hardware/building/facility supplies → "Building Maintenance / Repairs"; cleaning supplies → "Cleaning Supplies"; food/groceries → "Food"; kitchen supplies → "Kitchen Supplies"; pillbox/pill organizer/medical supplies → "Supplies" (Healthcare); activity/camp/program supplies → "Supplies" (Program); clothing/uniforms/merch → "Merch + Uniforms". Only use "Miscellaneous" if nothing else fits. Full list: #{categories_text}
 
       Return ONLY valid JSON. No explanation, no markdown, no code fences.
     PROMPT
@@ -126,11 +126,16 @@ class ReceiptAnalysisService
   end
 
   def resolve_category_ids(parsed)
-    category_map = ExpenseCategory.active.each_with_object({}) { |c, h| h[c.name.downcase] = c.id }
+    categories = ExpenseCategory.active.to_a
+    category_map = categories.each_with_object({}) { |c, h| h[c.name.downcase] = c.id }
+    section_map = categories.group_by { |c| c.section.downcase }
+
     parsed["expenses"]&.each do |expense|
-      name = expense["category"].to_s
-      expense["category_id"] = category_map[name.downcase] ||
-        category_map.find { |k, _| k.include?(name.downcase) || name.downcase.include?(k) }&.last
+      name = expense["category"].to_s.downcase
+      expense["category_id"] = category_map[name] ||
+        category_map.find { |k, _| k.include?(name) || name.include?(k) }&.last ||
+        section_map[name]&.find { |c| c.name.downcase.include?("supplies") }&.id ||
+        section_map[name]&.first&.id
     end
     parsed
   end

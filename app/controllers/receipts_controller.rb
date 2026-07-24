@@ -4,10 +4,22 @@ class ReceiptsController < ApplicationController
   before_action :require_admin!, only: [ :bulk_upload ]
 
   def index
-    @show_all = current_user.admin? && params[:all] == "1"
-    @receipts = @show_all ? Receipt.all : current_user.receipts
-    @receipts = @receipts.includes(:user, :payment_method, expenses: :expense_category)
-                         .order(expense_date: :desc)
+    if current_user.admin?
+      @users = User.order(:name)
+      @filtered_user = User.find_by(id: params[:user_id])
+      @receipts = @filtered_user ? @filtered_user.receipts : Receipt.all
+      @show_all = @filtered_user.nil?
+      @receipts = @receipts.includes(:user, :payment_method, :charges, expenses: :expense_category)
+                           .order(expense_date: :desc)
+      if params[:unmatched_charges].present?
+        @receipts = @receipts.reject { |r| r.charges.sum(&:amount) >= r.total_amount }
+      end
+    else
+      @receipts = current_user.receipts
+                              .includes(:user, :payment_method, expenses: :expense_category)
+                              .order(expense_date: :desc)
+      @show_all = false
+    end
   end
 
   def show
@@ -150,7 +162,7 @@ class ReceiptsController < ApplicationController
   private
 
   def set_receipt
-    @receipt = Receipt.find(params[:id])
+    @receipt = Receipt.includes(:charges, expenses: :expense_category).find(params[:id])
   end
 
   def authorize_receipt!

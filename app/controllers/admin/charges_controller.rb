@@ -4,11 +4,11 @@ class Admin::ChargesController < Admin::BaseController
   before_action :set_charge, only: [ :show, :associate, :lock_in, :save_expenses ]
 
   def show
-    @charge = Charge.includes(:payment_method, :charge_receipts,
+    @charge = Charge.includes(:payment_method,
                                charge_expenses: :expense_category,
                                receipts: [ { expenses: :expense_category }, { file_attachment: :blob } ]).find(params[:id])
     @nearby_receipts = @charge.nearby_receipts
-    @associated_ids = @charge.receipts.pluck(:id).to_set
+    @associated_receipt = @charge.receipts.first
   end
 
   def index
@@ -19,8 +19,13 @@ class Admin::ChargesController < Admin::BaseController
       @charges = @charges.unmatched
     end
 
+    if params[:payment_method_id].present?
+      @charges = @charges.where(payment_method_id: params[:payment_method_id])
+    end
+
     @charges = @charges.all
     @payment_methods = PaymentMethod.order(:name)
+    @csv_statements = CsvStatement.includes(:payment_method).order(created_at: :desc)
   end
 
   def import
@@ -30,6 +35,14 @@ class Admin::ChargesController < Admin::BaseController
 
     payment_method = PaymentMethod.find(params[:payment_method_id])
     results = import_csv(params[:file], payment_method)
+
+    statement = CsvStatement.new(
+      payment_method: payment_method,
+      imported_count: results[:imported],
+      skipped_count: results[:skipped]
+    )
+    statement.file.attach(params[:file])
+    statement.save!
 
     redirect_to admin_charges_path,
       notice: "#{results[:imported]} charges imported, #{results[:skipped]} skipped as duplicates."
@@ -41,11 +54,18 @@ class Admin::ChargesController < Admin::BaseController
 
   def associate
     receipt = Receipt.find(params[:receipt_id])
+    previously_associated = @charge.receipts.to_a
+
     if @charge.receipts.include?(receipt)
       @charge.receipts.delete(receipt)
     else
-      @charge.receipts << receipt
+      @charge.receipts = [ receipt ]
     end
+
+    (previously_associated + [ receipt ]).uniq.each do |r|
+      r.update_column(:charges_total, r.charges.reload.sum(:amount))
+    end
+
     redirect_to admin_charge_path(@charge)
   rescue ActiveRecord::RecordNotFound
     redirect_to admin_charge_path(@charge), alert: "Receipt not found."
