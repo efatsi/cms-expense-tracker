@@ -11,7 +11,7 @@ class Charge < ApplicationRecord
   def nearby_receipts
     return Receipt.none unless transaction_date
 
-    date_range = (transaction_date - 4.days)..transaction_date
+    date_range = (transaction_date - 6.days)..(transaction_date + 1.day)
     expense_totals_sql = Expense.select("receipt_id, SUM(amount) AS total").group("receipt_id").to_sql
     associated_ids = receipts.pluck(:id)
 
@@ -22,7 +22,7 @@ class Charge < ApplicationRecord
       scope.where("receipts.charges_total < expense_totals.total OR receipts.id IN (?)", associated_ids)
     else
       scope.where("receipts.charges_total < expense_totals.total")
-    end.order(:expense_date)
+    end.order(expense_date: :desc)
   end
 
   def accounted_total

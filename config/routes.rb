@@ -20,10 +20,14 @@ Rails.application.routes.draw do
     resources :expense_categories
     resources :payment_methods
     resources :charges, only: [ :index, :show ] do
-      collection { post :import }
+      collection do
+        get :import
+        post :import
+      end
       member do
         post :associate
         patch :lock_in
+        patch :reset_match
         post :save_expenses
       end
     end

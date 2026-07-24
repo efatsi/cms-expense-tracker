@@ -1,55 +1,7 @@
 <div class="flex items-center justify-between mb-6">
   <h1 class="text-2xl font-serif font-semibold">AmEx Charges</h1>
+  <%= link_to "Import Statement", import_admin_charges_path, class: "bg-white border border-gray-300 text-gray-700 px-4 py-1.5 rounded text-sm hover:bg-gray-50" %>
 </div>
-
-<div class="bg-white rounded-lg border border-gray-200 p-6 mb-6">
-  <h2 class="font-semibold mb-4">Import CSV Statement</h2>
-  <%= form_with url: import_admin_charges_path, method: :post, multipart: true, class: "flex flex-wrap gap-3 items-end" do |f| %>
-    <div>
-      <%= label_tag :payment_method_id, "Payment Method", class: "block text-xs font-medium text-gray-600 mb-1" %>
-      <%= select_tag :payment_method_id, options_from_collection_for_select(@payment_methods, :id, :display_name),
-            include_blank: "Select method...", class: "border border-gray-300 rounded-md px-3 py-2 text-sm" %>
-    </div>
-    <div>
-      <%= label_tag :file, "CSV File", class: "block text-xs font-medium text-gray-600 mb-1" %>
-      <%= file_field_tag :file, accept: ".csv", class: "text-sm text-gray-600 file:mr-3 file:py-1.5 file:px-3 file:rounded file:border file:border-gray-300 file:text-sm file:bg-gray-50 file:cursor-pointer" %>
-    </div>
-    <%= submit_tag "Import", class: "bg-green-camp text-white px-4 py-2 rounded-md text-sm cursor-pointer hover:bg-green-dark" %>
-  <% end %>
-  <p class="text-xs text-gray-500 mt-2">Expected CSV columns: Date, Amount, Description</p>
-</div>
-
-<% if @csv_statements.any? %>
-  <div class="bg-white rounded-lg border border-gray-200 p-6 mb-6">
-    <h2 class="font-semibold mb-4">Past Imports</h2>
-    <table class="w-full text-sm">
-      <thead class="border-b border-gray-200">
-        <tr>
-          <th class="text-left pb-2 font-medium text-gray-600">Date</th>
-          <th class="text-left pb-2 font-medium text-gray-600">Payment Method</th>
-          <th class="text-left pb-2 font-medium text-gray-600">Imported</th>
-          <th class="text-left pb-2 font-medium text-gray-600">Skipped</th>
-          <th class="text-left pb-2 font-medium text-gray-600">File</th>
-        </tr>
-      </thead>
-      <tbody class="divide-y divide-gray-100">
-        <% @csv_statements.each do |statement| %>
-          <tr>
-            <td class="py-2 pr-4"><%= statement.created_at.strftime("%b %d, %Y") %></td>
-            <td class="py-2 pr-4 text-gray-600"><%= statement.payment_method.display_name %></td>
-            <td class="py-2 pr-4"><%= statement.imported_count %> imported</td>
-            <td class="py-2 pr-4"><%= statement.skipped_count %> skipped</td>
-            <td class="py-2">
-              <% if statement.file.attached? %>
-                <%= link_to "Download", rails_blob_path(statement.file, disposition: "attachment"), class: "text-blue-600 hover:underline" %>
-              <% end %>
-            </td>
-          </tr>
-        <% end %>
-      </tbody>
-    </table>
-  </div>
-<% end %>
 
 <div class="flex items-center gap-4 mb-4">
   <%= form_with url: admin_charges_path, method: :get, class: "flex items-center gap-3" do |f| %>

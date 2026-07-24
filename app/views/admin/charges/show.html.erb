@@ -172,6 +172,11 @@
       <% end %>
     </div>
   <% end %>
+
+  <div class="flex justify-end mt-4">
+    <%= button_to "Reset to Unmatched", reset_match_admin_charge_path(@charge), method: :patch,
+          class: "text-xs px-3 py-1.5 rounded border border-red-300 text-red-600 hover:bg-red-50 cursor-pointer" %>
+  </div>
 <% else %>
   <div class="bg-white rounded-lg border border-gray-200 overflow-hidden mb-6">
     <div class="flex items-center justify-between px-6 py-4 border-b border-gray-200">
@@ -179,7 +184,7 @@
       <div class="flex items-center gap-4">
         <% if @associated_receipt %>
           <%= form_with url: lock_in_admin_charge_path(@charge), method: :patch do |f| %>
-            <%= submit_tag "Lock In", class: "bg-green-camp text-white px-4 py-1.5 rounded text-sm cursor-pointer hover:bg-green-dark" %>
+            <%= submit_tag "Lock In", class: "bg-green-camp text-white px-4 py-1.5 rounded text-sm cursor-pointer hover:bg-green-dark", autofocus: true %>
           <% end %>
         <% end %>
       </div>
@@ -200,7 +205,9 @@
         <tbody class="divide-y divide-gray-100">
           <% @nearby_receipts.each do |receipt| %>
             <% selected = @associated_receipt&.id == receipt.id %>
-            <tr class="cursor-pointer hover:brightness-95 <%= selected ? 'bg-green-50 border-l-4 border-l-green-400' : '' %>"
+            <% amount_match = receipt.total_amount == @charge.amount %>
+            <% vendor_match = @charge.description.to_s.downcase.include?(receipt.vendor.to_s.downcase) %>
+            <tr class="cursor-pointer hover:brightness-95 <%= selected ? 'bg-green-50 border-l-4 border-l-green-400' : !selected && amount_match ? 'bg-green-50 border-l-4 border-l-green-400' : !selected && vendor_match ? 'bg-yellow-50 border-l-4 border-l-yellow-400' : '' %>"
                 data-controller="row-link" data-href="<%= receipt_path(receipt) %>" data-new-tab="true" data-action="click->row-link#navigate">
               <td class="px-4 py-3"><%= receipt.expense_date.strftime("%b %d, %Y") %></td>
               <td class="px-4 py-3 text-gray-600"><%= receipt.user.name %></td>

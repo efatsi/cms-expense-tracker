@@ -20,7 +20,7 @@ class AnalyzeReceiptJob < ApplicationJob
       end
 
       receipt.vendor = result["vendor"] if result["vendor"].present?
-      receipt.expense_date = Date.parse(result["date"]) if result["date"].present?
+      receipt.expense_date = Date.parse(result["date"]) rescue nil if result["date"].present?
       receipt.status = :pending
 
       if result["expenses"].present?

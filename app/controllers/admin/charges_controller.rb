@@ -1,7 +1,7 @@
 require "csv"
 
 class Admin::ChargesController < Admin::BaseController
-  before_action :set_charge, only: [ :show, :associate, :lock_in, :save_expenses ]
+  before_action :set_charge, only: [ :show, :associate, :lock_in, :reset_match, :save_expenses ]
 
   def show
     @charge = Charge.includes(:payment_method,
@@ -25,12 +25,17 @@ class Admin::ChargesController < Admin::BaseController
 
     @charges = @charges.all
     @payment_methods = PaymentMethod.order(:name)
-    @csv_statements = CsvStatement.includes(:payment_method).order(created_at: :desc)
   end
 
   def import
+    if request.get?
+      @payment_methods = PaymentMethod.order(:name)
+      @csv_statements = CsvStatement.includes(:payment_method).order(created_at: :desc)
+      return
+    end
+
     unless params[:file].present?
-      return redirect_to admin_charges_path, alert: "Please select a CSV file."
+      return redirect_to import_admin_charges_path, alert: "Please select a CSV file."
     end
 
     payment_method = PaymentMethod.find(params[:payment_method_id])
@@ -44,12 +49,12 @@ class Admin::ChargesController < Admin::BaseController
     statement.file.attach(params[:file])
     statement.save!
 
-    redirect_to admin_charges_path,
+    redirect_to import_admin_charges_path,
       notice: "#{results[:imported]} charges imported, #{results[:skipped]} skipped as duplicates."
   rescue ActiveRecord::RecordNotFound
-    redirect_to admin_charges_path, alert: "Payment method not found."
+    redirect_to import_admin_charges_path, alert: "Payment method not found."
   rescue CSV::MalformedCSVError => e
-    redirect_to admin_charges_path, alert: "Invalid CSV: #{e.message}"
+    redirect_to import_admin_charges_path, alert: "Invalid CSV: #{e.message}"
   end
 
   def associate
@@ -98,6 +103,15 @@ class Admin::ChargesController < Admin::BaseController
     @charge.update!(matched_at: Time.current)
     @charge.receipts.each { |r| r.update!(status: :matched) }
     redirect_to admin_charge_path(@charge), notice: "Charge locked in."
+  end
+
+  def reset_match
+    @charge.update!(matched_at: nil)
+    previously_associated = @charge.receipts.to_a
+    @charge.receipts.each { |r| r.update!(status: :pending) }
+    @charge.receipts.clear
+    previously_associated.each { |r| r.update_column(:charges_total, r.charges.reload.sum(:amount)) }
+    redirect_to admin_charge_path(@charge), notice: "Charge reset to unmatched."
   end
 
   private
