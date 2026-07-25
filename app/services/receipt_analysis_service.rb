@@ -65,11 +65,13 @@ class ReceiptAnalysisService
     message = client.messages.create(
       model: MODEL,
       max_tokens: 1024,
-      messages: [ { role: "user", content: content } ],
-      output_config: { format: { type: "json_object" } }
+      messages: [ { role: "user", content: content } ]
     )
 
-    JSON.parse(message.content.first.text)
+    Rails.logger.info("ReceiptAnalysisService tokens — input: #{message.usage.input_tokens}, output: #{message.usage.output_tokens}")
+    result = JSON.parse(message.content.first.text)
+    Rails.logger.info("ReceiptAnalysisService result:\n#{JSON.pretty_generate(result)}")
+    result
   end
 
   def categories_text

@@ -64,7 +64,10 @@ export default class extends Controller {
         signal: this._abortController.signal
       })
 
-      if (!response.ok) throw new Error("Analysis failed")
+      if (!response.ok) {
+        const err = await response.json().catch(() => ({}))
+        throw new Error(err.error || "Analysis failed")
+      }
 
       const data = await response.json()
       const form = this.element.querySelector("form")

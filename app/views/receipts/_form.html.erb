@@ -100,7 +100,7 @@
     </template>
   </div>
 
-  <% if receipt.file.attached? %>
+  <% if receipt.file.attached? && receipt.file.blob.persisted? %>
     <div class="bg-white rounded-lg border border-gray-200 p-6 mb-4">
       <h2 class="font-semibold mb-3">Attached Receipt</h2>
       <% if receipt.file.image? %>
