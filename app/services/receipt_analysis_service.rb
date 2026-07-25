@@ -11,6 +11,7 @@ class ReceiptAnalysisService
 
   def call
     is_pdf = @content_type.include?("pdf") || @filename.end_with?(".pdf")
+    sanitize_pdf! if is_pdf
 
     result = if is_pdf
       text = extract_pdf_text
@@ -137,6 +138,24 @@ class ReceiptAnalysisService
     Base64.strict_encode64(File.binread(png_path))
   ensure
     File.delete(png_path) if png_path && File.exist?(png_path)
+  end
+
+  def sanitize_pdf!
+    data = File.binread(@path)
+    eof_pos = data.rindex("%%EOF")
+    return unless eof_pos
+
+    end_pos = eof_pos + 5
+    end_pos += 1 if end_pos < data.size && data.byteslice(end_pos) =~ /[\r\n]/
+    return if end_pos >= data.size # nothing trailing
+
+    tmp = Tempfile.new([ "cleaned", ".pdf" ])
+    tmp.binmode
+    tmp.write(data.byteslice(0, end_pos))
+    tmp.close
+    @_sanitized_tmp = tmp # prevent GC
+    Rails.logger.info("ReceiptAnalysisService: stripped #{data.size - end_pos} bytes after %%EOF")
+    @path = tmp.path
   end
 
   def extract_pdf_text

@@ -1,6 +1,6 @@
 class ReceiptsController < ApplicationController
-  before_action :set_receipt, only: [ :show, :edit, :update, :destroy, :approve ]
-  before_action :authorize_receipt!, only: [ :show, :edit, :update, :destroy, :approve ]
+  before_action :set_receipt, only: [ :show, :edit, :update, :destroy, :approve, :reprocess ]
+  before_action :authorize_receipt!, only: [ :show, :edit, :update, :destroy, :approve, :reprocess ]
   before_action :require_admin!, only: [ :bulk_upload ]
 
   def index
@@ -53,6 +53,11 @@ class ReceiptsController < ApplicationController
   def approve
     @receipt.update!(approved_at: Time.current)
     redirect_to @receipt, notice: "Receipt categorization approved."
+  end
+
+  def reprocess
+    AnalyzeReceiptJob.new.perform(@receipt.id)
+    head :ok
   end
 
   def destroy

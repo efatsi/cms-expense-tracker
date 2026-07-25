@@ -9,7 +9,10 @@ Rails.application.routes.draw do
       get  :bulk_upload
       post :bulk_upload
     end
-    member { post :approve }
+    member do
+      post :approve
+      post :reprocess
+    end
     resources :expenses, only: [ :new, :create, :edit, :update, :destroy ]
   end
 
