@@ -50,6 +50,9 @@ gem "pagy"
 # PDF text extraction
 gem "pdf-reader"
 
+# Claude API
+gem "anthropic"
+
 # Zip file extraction
 gem "rubyzip"
 

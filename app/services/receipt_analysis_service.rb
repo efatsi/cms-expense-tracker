@@ -1,6 +1,7 @@
 class ReceiptAnalysisService
-  require "net/http"
   require "base64"
+
+  MODEL = "claude-opus-4-6"
 
   def initialize(path:, content_type:, filename:)
     @path = path
@@ -14,17 +15,16 @@ class ReceiptAnalysisService
     result = if is_pdf
       text = extract_pdf_text
       if text.present?
-        parse_with_ollama(model: "llama3.2", prompt: pdf_prompt(text), stream: false, format: "json")
+        parse_with_claude(prompt: pdf_prompt(text))
       else
-        # Image-based PDF — render first page to PNG and use vision model
         image_data = pdf_to_image_base64
         return empty_result if image_data.nil?
 
-        parse_with_ollama(model: "llama3.2-vision", prompt: image_prompt, images: [ image_data ], stream: false, format: "json")
+        parse_with_claude(prompt: image_prompt, image_data: image_data, media_type: "image/png")
       end
     else
       image_data = Base64.strict_encode64(File.binread(@path))
-      parse_with_ollama(model: "llama3.2-vision", prompt: image_prompt, images: [ image_data ], stream: false, format: "json")
+      parse_with_claude(prompt: image_prompt, image_data: image_data, media_type: @content_type)
     end
 
     resolve_category_ids(result)
@@ -37,6 +37,39 @@ class ReceiptAnalysisService
 
   def empty_result
     { "vendor" => nil, "date" => nil, "expenses" => [] }
+  end
+
+  def client
+    @client ||= Anthropic::Client.new(
+      api_key: Rails.application.credentials.anthropic_api_key!
+    )
+  end
+
+  def parse_with_claude(prompt:, image_data: nil, media_type: nil)
+    content = if image_data
+      [
+        {
+          type: "image",
+          source: {
+            type: "base64",
+            media_type: media_type,
+            data: image_data
+          }
+        },
+        { type: "text", text: prompt }
+      ]
+    else
+      prompt
+    end
+
+    message = client.messages.create(
+      model: MODEL,
+      max_tokens: 1024,
+      messages: [ { role: "user", content: content } ],
+      output_config: { format: { type: "json_object" } }
+    )
+
+    JSON.parse(message.content.first.text)
   end
 
   def categories_text
@@ -110,19 +143,6 @@ class ReceiptAnalysisService
   rescue => e
     Rails.logger.error("PDF extraction failed: #{e.message}")
     nil
-  end
-
-  def parse_with_ollama(body)
-    uri = URI("http://localhost:11434/api/generate")
-    http = Net::HTTP.new(uri.host, uri.port)
-    http.read_timeout = 90
-
-    request = Net::HTTP::Post.new(uri, "Content-Type" => "application/json")
-    request.body = body.to_json
-
-    response = http.request(request)
-    raw = JSON.parse(response.body)["response"]
-    JSON.parse(raw)
   end
 
   def resolve_category_ids(parsed)
