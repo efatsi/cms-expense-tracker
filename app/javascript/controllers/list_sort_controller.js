@@ -17,7 +17,7 @@ export default class extends Controller {
       // Defer so List.js finishes applying asc/desc classes before we read them
       setTimeout(() => {
         this._updateIndicators()
-        if (!this._restoring) this._syncSortState()
+        this._syncSortState(!this._restoring)
         this._restoring = false
       }, 0)
     })
@@ -45,7 +45,7 @@ export default class extends Controller {
     })
   }
 
-  _syncSortState() {
+  _syncSortState(saveToStorage = true) {
     const sort = this._currentSort()
     const url = new URL(window.location)
 
@@ -63,10 +63,12 @@ export default class extends Controller {
 
     history.replaceState(null, "", url.toString())
 
-    if (sort) {
-      try { localStorage.setItem(this._storageKey(), JSON.stringify({ field: sort.field, order: sort.order })) } catch (e) {}
-    } else {
-      try { localStorage.removeItem(this._storageKey()) } catch (e) {}
+    if (saveToStorage) {
+      if (sort) {
+        try { localStorage.setItem(this._storageKey(), JSON.stringify({ field: sort.field, order: sort.order })) } catch (e) {}
+      } else {
+        try { localStorage.removeItem(this._storageKey()) } catch (e) {}
+      }
     }
 
     if (this.hasExportLinkTarget) {

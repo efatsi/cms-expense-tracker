@@ -23,7 +23,7 @@ class Admin::ChargesController < Admin::BaseController
 
   def index
     @filter_params = resolve_filters(:charges_filters, CHARGE_FILTER_PARAMS)
-    @charges = Charge.includes(:payment_method)
+    @charges = Charge.includes(:payment_method, charge_expenses: :expense_category, receipts: { expenses: :expense_category })
                      .order(transaction_date: :desc)
 
     if @filter_params[:unmatched_only].present?

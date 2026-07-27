@@ -25,7 +25,7 @@
   <% end %>
 </div>
 
-<div id="charges-list" data-controller="list-sort" data-list-sort-columns-value='[{"name":"col-date","attr":"data-sort-val"},{"name":"col-amount","attr":"data-sort-val"},"col-method","col-description","col-status"]' class="bg-white rounded-lg border border-gray-200 overflow-hidden">
+<div id="charges-list" data-controller="list-sort" data-list-sort-columns-value='[{"name":"col-date","attr":"data-sort-val"},{"name":"col-amount","attr":"data-sort-val"},"col-method","col-description","col-status","col-category"]' class="bg-white rounded-lg border border-gray-200 overflow-hidden">
   <table class="w-full text-sm">
     <thead class="bg-gray-50 border-b border-gray-200">
       <tr>
@@ -54,6 +54,11 @@
             Status<span class="sort-icon text-gray-400"> ↕</span>
           </button>
         </th>
+        <th class="text-left px-4 py-3 font-medium text-gray-600">
+          <button class="sort" data-sort="col-category" data-list-sort-target="btn">
+            Category<span class="sort-icon text-gray-400"> ↕</span>
+          </button>
+        </th>
       </tr>
     </thead>
     <tbody class="list-tbody divide-y divide-gray-100">
@@ -72,6 +77,16 @@
               <span class="inline-flex px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">Matched</span>
             <% else %>
               <span class="inline-flex px-2 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">Unmatched</span>
+            <% end %>
+          </td>
+          <td class="col-category px-4 py-3">
+            <% cats = charge.charge_expenses.map(&:expense_category).compact %>
+            <% cats = charge.receipts.flat_map { |r| r.expenses.map(&:expense_category) }.compact if cats.empty? %>
+            <% cats.uniq.each do |cat| %>
+              <div>
+                <div class="text-xs text-gray-400"><%= cat.section %></div>
+                <div class="text-sm"><%= cat.name %></div>
+              </div>
             <% end %>
           </td>
         </tr>
