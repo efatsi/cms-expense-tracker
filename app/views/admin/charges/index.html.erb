@@ -2,98 +2,102 @@
   <script>history.replaceState(null, "", "<%= raw @restore_url %>")</script>
 <% end %>
 
-<div class="flex items-center justify-between mb-6">
-  <h1 class="text-2xl font-serif font-semibold">AmEx Charges</h1>
-  <div class="flex items-center gap-2">
-    <%= link_to "Export CSV", export_admin_charges_path(payment_method_id: @filter_params[:payment_method_id].presence), class: "bg-white border border-gray-300 text-gray-700 px-4 py-1.5 rounded text-sm hover:bg-gray-50", data: { "list-sort-target": "exportLink" } %>
-    <%= link_to "Import Statement", import_admin_charges_path, class: "bg-white border border-gray-300 text-gray-700 px-4 py-1.5 rounded text-sm hover:bg-gray-50" %>
+<div id="charges-list" data-controller="list-sort" data-list-sort-columns-value='[{"name":"col-date","attr":"data-sort-val"},{"name":"col-amount","attr":"data-sort-val"},"col-method","col-description","col-status","col-category"]'>
+
+  <div class="flex items-center justify-between mb-6">
+    <h1 class="text-2xl font-serif font-semibold">AmEx Charges</h1>
+    <div class="flex items-center gap-2">
+      <%= link_to "Export CSV", export_admin_charges_path(payment_method_id: @filter_params[:payment_method_id].presence), class: "bg-white border border-gray-300 text-gray-700 px-4 py-1.5 rounded text-sm hover:bg-gray-50", data: { "list-sort-target": "exportLink" } %>
+      <%= link_to "Import Statement", import_admin_charges_path, class: "bg-white border border-gray-300 text-gray-700 px-4 py-1.5 rounded text-sm hover:bg-gray-50" %>
+    </div>
   </div>
-</div>
 
-<div class="flex items-center gap-4 mb-4">
-  <%= form_with url: admin_charges_path, method: :get, class: "flex items-center gap-3" do |f| %>
-    <%= hidden_field_tag :sort,  @filter_params[:sort],  data: { "list-sort-target": "sortInput"  } %>
-    <%= hidden_field_tag :order, @filter_params[:order], data: { "list-sort-target": "orderInput" } %>
-    <%= select_tag :payment_method_id,
-          options_for_select([["Show All", ""]] + @payment_methods.map { |pm| [pm.name, pm.id] }, @filter_params[:payment_method_id]),
-          class: "border border-gray-300 rounded-md px-3 py-2 text-sm",
-          onchange: "this.form.submit()" %>
-    <label class="flex items-center gap-2 text-sm cursor-pointer">
-      <%= check_box_tag :unmatched_only, "1", @filter_params[:unmatched_only].present?, class: "rounded", onchange: "this.form.submit()" %>
-      Show unmatched only
-    </label>
-  <% end %>
-</div>
+  <div class="flex items-center gap-4 mb-4">
+    <%= form_with url: admin_charges_path, method: :get, class: "flex items-center gap-3" do |f| %>
+      <%= hidden_field_tag :sort,  @filter_params[:sort],  data: { "list-sort-target": "sortInput"  } %>
+      <%= hidden_field_tag :order, @filter_params[:order], data: { "list-sort-target": "orderInput" } %>
+      <%= select_tag :payment_method_id,
+            options_for_select([["Show All", ""]] + @payment_methods.map { |pm| [pm.name, pm.id] }, @filter_params[:payment_method_id]),
+            class: "border border-gray-300 rounded-md px-3 py-2 text-sm",
+            onchange: "this.form.submit()" %>
+      <label class="flex items-center gap-2 text-sm cursor-pointer">
+        <%= check_box_tag :unmatched_only, "1", @filter_params[:unmatched_only].present?, class: "rounded", onchange: "this.form.submit()" %>
+        Show unmatched only
+      </label>
+    <% end %>
+  </div>
 
-<div id="charges-list" data-controller="list-sort" data-list-sort-columns-value='[{"name":"col-date","attr":"data-sort-val"},{"name":"col-amount","attr":"data-sort-val"},"col-method","col-description","col-status","col-category"]' class="bg-white rounded-lg border border-gray-200 overflow-hidden">
-  <table class="w-full text-sm">
-    <thead class="bg-gray-50 border-b border-gray-200">
-      <tr>
-        <th class="text-left px-4 py-3 font-medium text-gray-600">
-          <button class="sort" data-sort="col-date" data-list-sort-target="btn">
-            Date<span class="sort-icon text-gray-400"> ↕</span>
-          </button>
-        </th>
-        <th class="text-left px-4 py-3 font-medium text-gray-600">
-          <button class="sort" data-sort="col-method" data-list-sort-target="btn">
-            Payment Method<span class="sort-icon text-gray-400"> ↕</span>
-          </button>
-        </th>
-        <th class="text-left px-4 py-3 font-medium text-gray-600">
-          <button class="sort" data-sort="col-description" data-list-sort-target="btn">
-            Description<span class="sort-icon text-gray-400"> ↕</span>
-          </button>
-        </th>
-        <th class="text-right px-4 py-3 font-medium text-gray-600">
-          <button class="sort" data-sort="col-amount" data-list-sort-target="btn">
-            Amount<span class="sort-icon text-gray-400"> ↕</span>
-          </button>
-        </th>
-        <th class="text-left px-4 py-3 font-medium text-gray-600">
-          <button class="sort" data-sort="col-status" data-list-sort-target="btn">
-            Status<span class="sort-icon text-gray-400"> ↕</span>
-          </button>
-        </th>
-        <th class="text-left px-4 py-3 font-medium text-gray-600">
-          <button class="sort" data-sort="col-category" data-list-sort-target="btn">
-            Category<span class="sort-icon text-gray-400"> ↕</span>
-          </button>
-        </th>
-      </tr>
-    </thead>
-    <tbody class="list-tbody divide-y divide-gray-100">
-      <% @charges.each do |charge| %>
-        <tr class="hover:bg-gray-50 cursor-pointer" data-controller="row-link" data-href="<%= admin_charge_path(charge) %>" data-action="click->row-link#navigate">
-          <td class="col-date px-4 py-3" data-sort-val="<%= charge.transaction_date.strftime("%Y%m%d") %>">
-            <%= charge.transaction_date.strftime("%b %d, %Y") %>
-          </td>
-          <td class="col-method px-4 py-3 text-gray-600"><%= charge.payment_method.display_name %></td>
-          <td class="col-description px-4 py-3"><%= charge.description %></td>
-          <td class="col-amount px-4 py-3 text-right font-medium" data-sort-val="<%= format("%015.2f", charge.amount.to_f) %>">
-            <%= number_to_currency(charge.amount) %>
-          </td>
-          <td class="col-status px-4 py-3">
-            <% if charge.matched_at.present? %>
-              <span class="inline-flex px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">Matched</span>
-            <% else %>
-              <span class="inline-flex px-2 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">Unmatched</span>
-            <% end %>
-          </td>
-          <td class="col-category px-4 py-3">
-            <% cats = charge.charge_expenses.map(&:expense_category).compact %>
-            <% cats = charge.receipts.flat_map { |r| r.expenses.map(&:expense_category) }.compact if cats.empty? %>
-            <% cats.uniq.each do |cat| %>
-              <div>
-                <div class="text-xs text-gray-400"><%= cat.section %></div>
-                <div class="text-sm"><%= cat.name %></div>
-              </div>
-            <% end %>
-          </td>
+  <div class="bg-white rounded-lg border border-gray-200 overflow-hidden">
+    <table class="w-full text-sm">
+      <thead class="bg-gray-50 border-b border-gray-200">
+        <tr>
+          <th class="text-left px-4 py-3 font-medium text-gray-600">
+            <button class="sort" data-sort="col-date" data-list-sort-target="btn">
+              Date<span class="sort-icon text-gray-400"> ↕</span>
+            </button>
+          </th>
+          <th class="text-left px-4 py-3 font-medium text-gray-600">
+            <button class="sort" data-sort="col-method" data-list-sort-target="btn">
+              Payment Method<span class="sort-icon text-gray-400"> ↕</span>
+            </button>
+          </th>
+          <th class="text-left px-4 py-3 font-medium text-gray-600">
+            <button class="sort" data-sort="col-description" data-list-sort-target="btn">
+              Description<span class="sort-icon text-gray-400"> ↕</span>
+            </button>
+          </th>
+          <th class="text-right px-4 py-3 font-medium text-gray-600">
+            <button class="sort" data-sort="col-amount" data-list-sort-target="btn">
+              Amount<span class="sort-icon text-gray-400"> ↕</span>
+            </button>
+          </th>
+          <th class="text-left px-4 py-3 font-medium text-gray-600">
+            <button class="sort" data-sort="col-status" data-list-sort-target="btn">
+              Status<span class="sort-icon text-gray-400"> ↕</span>
+            </button>
+          </th>
+          <th class="text-left px-4 py-3 font-medium text-gray-600">
+            <button class="sort" data-sort="col-category" data-list-sort-target="btn">
+              Category<span class="sort-icon text-gray-400"> ↕</span>
+            </button>
+          </th>
         </tr>
-      <% end %>
-    </tbody>
-  </table>
-  <% if @charges.empty? %>
-    <p class="text-gray-500 text-center py-8">No charges found.</p>
-  <% end %>
+      </thead>
+      <tbody class="list-tbody divide-y divide-gray-100">
+        <% @charges.each do |charge| %>
+          <tr class="hover:bg-gray-50 cursor-pointer" data-controller="row-link" data-href="<%= admin_charge_path(charge) %>" data-action="click->row-link#navigate">
+            <td class="col-date px-4 py-3" data-sort-val="<%= charge.transaction_date.strftime("%Y%m%d") %>">
+              <%= charge.transaction_date.strftime("%b %d, %Y") %>
+            </td>
+            <td class="col-method px-4 py-3 text-gray-600"><%= charge.payment_method.display_name %></td>
+            <td class="col-description px-4 py-3"><%= charge.description %></td>
+            <td class="col-amount px-4 py-3 text-right font-medium" data-sort-val="<%= format("%015.2f", charge.amount.to_f) %>">
+              <%= number_to_currency(charge.amount) %>
+            </td>
+            <td class="col-status px-4 py-3">
+              <% if charge.matched_at.present? %>
+                <span class="inline-flex px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">Matched</span>
+              <% else %>
+                <span class="inline-flex px-2 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">Unmatched</span>
+              <% end %>
+            </td>
+            <td class="col-category px-4 py-3">
+              <% cats = charge.charge_expenses.map(&:expense_category).compact %>
+              <% cats = charge.receipts.flat_map { |r| r.expenses.map(&:expense_category) }.compact if cats.empty? %>
+              <% cats.uniq.each do |cat| %>
+                <div>
+                  <div class="text-xs text-gray-400"><%= cat.section %></div>
+                  <div class="text-sm"><%= cat.name %></div>
+                </div>
+              <% end %>
+            </td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+    <% if @charges.empty? %>
+      <p class="text-gray-500 text-center py-8">No charges found.</p>
+    <% end %>
+  </div>
+
 </div>
