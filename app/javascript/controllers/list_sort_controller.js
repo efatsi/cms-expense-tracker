@@ -16,26 +16,26 @@ export default class extends Controller {
       ]
     })
 
+    this._restoring = false
+
     this.list.on("sortComplete", () => {
-      this._updateIndicators()
-      this._syncSortState()
+      // Defer so List.js finishes applying asc/desc classes before we read them
+      setTimeout(() => {
+        this._updateIndicators()
+        if (!this._restoring) this._syncSortState()
+        this._restoring = false
+      }, 0)
     })
 
-    // Restore sort from URL, falling back to localStorage
-    const url = new URL(window.location)
-    let sortField = url.searchParams.get("sort")
-    let sortOrder = url.searchParams.get("order")
-
-    if (!sortField || !sortOrder) {
-      try {
-        const stored = JSON.parse(localStorage.getItem(this._storageKey()))
-        if (stored) { sortField = stored.field; sortOrder = stored.order }
-      } catch (e) {}
-    }
-
-    if (sortField && sortOrder) {
-      this.list.sort(sortField, { order: sortOrder })
-    }
+    // Restore sort from localStorage only (URL sort params come from the cookie
+    // system, which can have stale sort state — localStorage is the source of truth)
+    try {
+      const stored = JSON.parse(localStorage.getItem(this._storageKey()))
+      if (stored?.field && stored?.order) {
+        this._restoring = true
+        this.list.sort(stored.field, { order: stored.order })
+      }
+    } catch (e) {}
   }
 
   disconnect() {

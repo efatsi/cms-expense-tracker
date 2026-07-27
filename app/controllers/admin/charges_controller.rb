@@ -11,7 +11,7 @@ class Admin::ChargesController < Admin::BaseController
     @associated_receipt = @charge.receipts.first
   end
 
-  CHARGE_FILTER_PARAMS = %w[payment_method_id unmatched_only sort order].freeze
+  CHARGE_FILTER_PARAMS = %w[payment_method_id unmatched_only].freeze
 
   SORT_COLUMN_MAP = {
     "col-date"        => "charges.transaction_date",
