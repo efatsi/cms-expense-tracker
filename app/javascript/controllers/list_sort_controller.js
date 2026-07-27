@@ -28,6 +28,14 @@ export default class extends Controller {
       const stored = JSON.parse(localStorage.getItem(this._storageKey()))
       if (stored?.field && stored?.order) {
         this._restoring = true
+        // Update the export link immediately from known values — don't rely on
+        // button classes (which may not be set yet during a programmatic sort)
+        if (this.hasExportLinkTarget) {
+          const exportUrl = new URL(this.exportLinkTarget.href)
+          exportUrl.searchParams.set("sort", stored.field)
+          exportUrl.searchParams.set("order", stored.order)
+          this.exportLinkTarget.href = exportUrl.toString()
+        }
         this.list.sort(stored.field, { order: stored.order })
       }
     } catch (e) {}
