@@ -52,13 +52,13 @@
             </button>
           </th>
           <th class="text-left px-4 py-3 font-medium text-gray-600">
-            <button class="sort" data-sort="col-status" data-list-sort-target="btn">
-              Status<span class="sort-icon text-gray-400"> ↕</span>
+            <button class="sort" data-sort="col-category" data-list-sort-target="btn">
+              Category<span class="sort-icon text-gray-400"> ↕</span>
             </button>
           </th>
           <th class="text-left px-4 py-3 font-medium text-gray-600">
-            <button class="sort" data-sort="col-category" data-list-sort-target="btn">
-              Category<span class="sort-icon text-gray-400"> ↕</span>
+            <button class="sort" data-sort="col-status" data-list-sort-target="btn">
+              Status<span class="sort-icon text-gray-400"> ↕</span>
             </button>
           </th>
         </tr>
@@ -74,13 +74,6 @@
             <td class="col-amount px-4 py-3 text-right font-medium" data-sort-val="<%= format("%015.2f", charge.amount.to_f) %>">
               <%= number_to_currency(charge.amount) %>
             </td>
-            <td class="col-status px-4 py-3">
-              <% if charge.matched_at.present? %>
-                <span class="inline-flex px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">Matched</span>
-              <% else %>
-                <span class="inline-flex px-2 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">Unmatched</span>
-              <% end %>
-            </td>
             <td class="col-category px-4 py-3">
               <% cats = charge.charge_expenses.map(&:expense_category).compact %>
               <% cats = charge.receipts.flat_map { |r| r.expenses.map(&:expense_category) }.compact if cats.empty? %>
@@ -89,6 +82,13 @@
                   <div class="text-xs text-gray-400"><%= cat.section %></div>
                   <div class="text-sm"><%= cat.name %></div>
                 </div>
+              <% end %>
+            </td>
+            <td class="col-status px-4 py-3">
+              <% if charge.matched_at.present? %>
+                <span class="inline-flex px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">Matched</span>
+              <% else %>
+                <span class="inline-flex px-2 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">Unmatched</span>
               <% end %>
             </td>
           </tr>
