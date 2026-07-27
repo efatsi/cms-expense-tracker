@@ -3,15 +3,18 @@ class ReceiptsController < ApplicationController
   before_action :authorize_receipt!, only: [ :show, :edit, :update, :destroy, :approve, :reprocess ]
   before_action :require_admin!, only: [ :bulk_upload ]
 
+  RECEIPT_FILTER_PARAMS = %w[user_id unmatched_charges].freeze
+
   def index
     if current_user.admin?
+      @filter_params = resolve_filters(:receipts_filters, RECEIPT_FILTER_PARAMS)
       @users = User.order(:name)
-      @filtered_user = User.find_by(id: params[:user_id])
+      @filtered_user = User.find_by(id: @filter_params[:user_id])
       @receipts = @filtered_user ? @filtered_user.receipts : Receipt.all
       @show_all = @filtered_user.nil?
       @receipts = @receipts.includes(:user, :payment_method, :charges, expenses: :expense_category)
                            .order(expense_date: :desc)
-      if params[:unmatched_charges].present?
+      if @filter_params[:unmatched_charges].present?
         @receipts = @receipts.reject { |r| r.charges.sum(&:amount) >= r.total_amount }
       end
     else
@@ -174,6 +177,18 @@ class ReceiptsController < ApplicationController
   end
 
   private
+
+  def resolve_filters(cookie_key, filter_keys)
+    if filter_keys.any? { |k| params.key?(k) }
+      saved = filter_keys.each_with_object({}) { |k, h| h[k] = params[k] if params[k].present? }
+      cookies[cookie_key] = { value: saved.to_json, expires: 1.year.from_now }
+      params
+    else
+      saved = cookies[cookie_key].present? ? (JSON.parse(cookies[cookie_key]) rescue {}) : {}
+      @restore_url = request.path + (saved.any? ? "?#{saved.to_query}" : "") if saved.any?
+      ActionController::Parameters.new(saved)
+    end
+  end
 
   def set_receipt
     @receipt = Receipt.includes(:charges, expenses: :expense_category).find(params[:id])

@@ -11,16 +11,19 @@ class Admin::ChargesController < Admin::BaseController
     @associated_receipt = @charge.receipts.first
   end
 
+  CHARGE_FILTER_PARAMS = %w[payment_method_id unmatched_only].freeze
+
   def index
+    @filter_params = resolve_filters(:charges_filters, CHARGE_FILTER_PARAMS)
     @charges = Charge.includes(:payment_method)
                      .order(transaction_date: :desc)
 
-    if params[:unmatched_only]
+    if @filter_params[:unmatched_only].present?
       @charges = @charges.unmatched
     end
 
-    if params[:payment_method_id].present?
-      @charges = @charges.where(payment_method_id: params[:payment_method_id])
+    if @filter_params[:payment_method_id].present?
+      @charges = @charges.where(payment_method_id: @filter_params[:payment_method_id])
     end
 
     @charges = @charges.all
@@ -160,6 +163,18 @@ class Admin::ChargesController < Admin::BaseController
   end
 
   private
+
+  def resolve_filters(cookie_key, filter_keys)
+    if filter_keys.any? { |k| params.key?(k) }
+      saved = filter_keys.each_with_object({}) { |k, h| h[k] = params[k] if params[k].present? }
+      cookies[cookie_key] = { value: saved.to_json, expires: 1.year.from_now }
+      params
+    else
+      saved = cookies[cookie_key].present? ? (JSON.parse(cookies[cookie_key]) rescue {}) : {}
+      @restore_url = request.path + (saved.any? ? "?#{saved.to_query}" : "") if saved.any?
+      ActionController::Parameters.new(saved)
+    end
+  end
 
   def set_charge
     @charge = Charge.find(params[:id])

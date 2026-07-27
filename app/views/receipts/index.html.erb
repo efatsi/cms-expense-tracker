@@ -12,15 +12,19 @@
   </div>
 </div>
 
+<% if @restore_url %>
+  <script>history.replaceState(null, "", "<%= @restore_url %>")</script>
+<% end %>
+
 <% if current_user.admin? %>
   <div class="flex items-center gap-4 mb-4">
     <%= form_with url: receipts_path, method: :get, class: "flex items-center gap-3" do |f| %>
       <%= select_tag :user_id,
-            options_for_select([["All Employees", ""]] + @users.map { |u| [u.name, u.id] }, params[:user_id]),
+            options_for_select([["All Employees", ""]] + @users.map { |u| [u.name, u.id] }, @filter_params[:user_id]),
             class: "border border-gray-300 rounded-md px-3 py-2 text-sm",
             onchange: "this.form.submit()" %>
       <label class="flex items-center gap-2 text-sm cursor-pointer">
-        <%= check_box_tag :unmatched_charges, "1", params[:unmatched_charges].present?,
+        <%= check_box_tag :unmatched_charges, "1", @filter_params[:unmatched_charges].present?,
               class: "rounded", onchange: "this.form.submit()" %>
         Unmatched to charges
       </label>

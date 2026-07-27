@@ -1,7 +1,11 @@
+<% if @restore_url %>
+  <script>history.replaceState(null, "", "<%= @restore_url %>")</script>
+<% end %>
+
 <div class="flex items-center justify-between mb-6">
   <h1 class="text-2xl font-serif font-semibold">AmEx Charges</h1>
   <div class="flex items-center gap-2">
-    <%= link_to "Export CSV", export_admin_charges_path(request.query_parameters), class: "bg-white border border-gray-300 text-gray-700 px-4 py-1.5 rounded text-sm hover:bg-gray-50" %>
+    <%= link_to "Export CSV", export_admin_charges_path(@filter_params.slice("payment_method_id")), class: "bg-white border border-gray-300 text-gray-700 px-4 py-1.5 rounded text-sm hover:bg-gray-50" %>
     <%= link_to "Import Statement", import_admin_charges_path, class: "bg-white border border-gray-300 text-gray-700 px-4 py-1.5 rounded text-sm hover:bg-gray-50" %>
   </div>
 </div>
@@ -9,11 +13,11 @@
 <div class="flex items-center gap-4 mb-4">
   <%= form_with url: admin_charges_path, method: :get, class: "flex items-center gap-3" do |f| %>
     <label class="flex items-center gap-2 text-sm cursor-pointer">
-      <%= check_box_tag :unmatched_only, "1", params[:unmatched_only].present?, class: "rounded" %>
+      <%= check_box_tag :unmatched_only, "1", @filter_params[:unmatched_only].present?, class: "rounded", onchange: "this.form.submit()" %>
       Show unmatched only
     </label>
     <%= select_tag :payment_method_id,
-          options_for_select([["Show All", ""]] + @payment_methods.map { |pm| [pm.name, pm.id] }, params[:payment_method_id]),
+          options_for_select([["Show All", ""]] + @payment_methods.map { |pm| [pm.name, pm.id] }, @filter_params[:payment_method_id]),
           class: "border border-gray-300 rounded-md px-3 py-2 text-sm",
           onchange: "this.form.submit()" %>
   <% end %>
