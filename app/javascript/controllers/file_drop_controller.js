@@ -1,7 +1,9 @@
 import { Controller } from "@hotwired/stimulus"
 
+const TIMEOUT_MS = 15000
+
 export default class extends Controller {
-  static targets = ["zone", "input", "label", "modal"]
+  static targets = ["zone", "input", "label", "modal", "loadingState", "errorState", "errorMessage"]
 
   dragover(event) {
     event.preventDefault()
@@ -36,10 +38,14 @@ export default class extends Controller {
 
   cancel() {
     if (this._abortController) {
-      this._abortController.abort()
+      this._abortController.abort("cancelled")
     }
     this._hideModal()
     this.labelTarget.textContent = this.inputTarget.files[0]?.name || "Drop file here or click to browse"
+  }
+
+  dismissError() {
+    this._hideModal()
   }
 
   async _handleFile(file) {
@@ -48,12 +54,13 @@ export default class extends Controller {
   }
 
   async _analyze(file) {
-    this._showModal()
+    this._showLoading()
 
     const formData = new FormData()
     formData.append("file", file)
 
     this._abortController = new AbortController()
+    const timeoutId = setTimeout(() => this._abortController.abort("timeout"), TIMEOUT_MS)
 
     try {
       const csrf = document.querySelector('meta[name="csrf-token"]').content
@@ -64,23 +71,40 @@ export default class extends Controller {
         signal: this._abortController.signal
       })
 
+      clearTimeout(timeoutId)
+
       if (!response.ok) {
         const err = await response.json().catch(() => ({}))
-        throw new Error(err.error || "Analysis failed")
+        throw new Error(err.error || `Server error (${response.status})`)
       }
 
       const data = await response.json()
       const form = this.element.querySelector("form")
       ;(form || this.element).dispatchEvent(new CustomEvent("receipt:analyzed", { detail: data, bubbles: true }))
-    } catch (e) {
-      if (e.name !== "AbortError") console.error("Receipt analysis failed:", e)
-    } finally {
       this._hideModal()
+    } catch (e) {
+      clearTimeout(timeoutId)
+      if (e.name === "AbortError" && this._abortController.signal.reason === "cancelled") {
+        this._hideModal()
+      } else {
+        const msg = this._abortController.signal.reason === "timeout"
+          ? "Analysis timed out after 15 seconds. You can fill in the details manually."
+          : (e.message || "Something went wrong. You can fill in the details manually.")
+        this._showError(msg)
+      }
     }
   }
 
-  _showModal() {
+  _showLoading() {
+    this.errorStateTarget.classList.add("hidden")
+    this.loadingStateTarget.classList.remove("hidden")
     this.modalTarget.classList.remove("hidden")
+  }
+
+  _showError(message) {
+    this.loadingStateTarget.classList.add("hidden")
+    this.errorMessageTarget.textContent = message
+    this.errorStateTarget.classList.remove("hidden")
   }
 
   _hideModal() {

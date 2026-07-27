@@ -3,17 +3,38 @@
        class="fixed inset-0 z-50 flex items-center justify-center hidden"
        style="background: rgba(0,0,0,0.4);">
     <div class="bg-white rounded-xl shadow-xl px-10 py-8 flex flex-col items-center gap-4 max-w-sm w-full mx-4">
-      <svg class="animate-spin text-green-camp" style="width:2rem;height:2rem" fill="none" viewBox="0 0 24 24">
-        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
-      </svg>
-      <p class="font-serif font-semibold text-lg text-gray-800">Analyzing your receipt…</p>
-      <p class="text-sm text-gray-500 text-center">Extracting vendor, date, and expense details.</p>
-      <button type="button" data-action="click->file-drop#cancel"
-              class="mt-2 text-sm text-gray-500 hover:text-gray-800 border border-gray-300 rounded-md px-4 py-2 hover:bg-gray-50 transition-colors">
-        Cancel
-        <span class="block text-xs text-gray-400 font-normal">Want to categorize yourself?</span>
-      </button>
+
+      <div data-file-drop-target="loadingState">
+        <div class="flex flex-col items-center gap-4">
+          <svg class="animate-spin text-green-camp" style="width:2rem;height:2rem" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+          </svg>
+          <p class="font-serif font-semibold text-lg text-gray-800">Analyzing your receipt…</p>
+          <p class="text-sm text-gray-500 text-center">Extracting vendor, date, and expense details.</p>
+          <button type="button" data-action="click->file-drop#cancel"
+                  class="mt-2 text-sm text-gray-500 hover:text-gray-800 border border-gray-300 rounded-md px-4 py-2 hover:bg-gray-50 transition-colors">
+            Cancel
+            <span class="block text-xs text-gray-400 font-normal">Want to categorize yourself?</span>
+          </button>
+        </div>
+      </div>
+
+      <div data-file-drop-target="errorState" class="hidden">
+        <div class="flex flex-col items-center gap-4">
+          <svg class="text-red-400" style="width:2rem;height:2rem" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
+          </svg>
+          <p class="font-serif font-semibold text-lg text-gray-800">Analysis failed</p>
+          <p data-file-drop-target="errorMessage" class="text-sm text-gray-500 text-center"></p>
+          <button type="button" data-action="click->file-drop#dismissError"
+                  class="mt-2 text-sm text-gray-500 hover:text-gray-800 border border-gray-300 rounded-md px-4 py-2 hover:bg-gray-50 transition-colors">
+            Dismiss
+            <span class="block text-xs text-gray-400 font-normal">You can still fill in details manually</span>
+          </button>
+        </div>
+      </div>
+
     </div>
   </div>
 

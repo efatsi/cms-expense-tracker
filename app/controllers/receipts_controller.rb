@@ -90,9 +90,9 @@ class ReceiptsController < ApplicationController
       return render :bulk_upload
     end
 
-    zip = params[:zip_file]
-    unless zip
-      flash.now[:alert] = "Please select a zip file."
+    uploaded = Array(params[:files]).flatten.compact
+    if uploaded.empty?
+      flash.now[:alert] = "Please select at least one file."
       return render :bulk_upload
     end
 
@@ -113,42 +113,51 @@ class ReceiptsController < ApplicationController
 
     require "zip"
     Dir.mktmpdir do |tmpdir|
-      Zip::File.open(zip.path) do |zip_file|
-        zip_file.each do |entry|
-          next if entry.directory?
-          next if File.basename(entry.name).start_with?(".")
-          next if entry.name.include?("__MACOSX")
-          next unless entry.name.match?(/\.(jpg|jpeg|png|gif|pdf)$/i)
-
-          tmp_path = File.join(tmpdir, File.basename(entry.name))
-          entry.get_input_stream { |is| File.binwrite(tmp_path, is.read) }
-
-          ext = File.extname(entry.name).downcase
-          content_type = ext == ".pdf" ? "application/pdf" : "image/#{ext.delete('.')}"
-
-          receipt = user.receipts.build(
-            vendor: "Processing...",
-            expense_date: Date.today,
-            payment_method: payment_method,
-            status: :processing
-          )
-          receipt.expenses.build(
-            description: "Processing...",
-            amount: 0.01,
-            expense_category: fallback_category
-          )
-
-          if receipt.save
-            receipt.file.attach(
-              io: File.open(tmp_path, "rb"),
-              filename: File.basename(entry.name),
-              content_type: content_type
-            )
-            AnalyzeReceiptJob.perform_later(receipt.id)
-            count += 1
-          else
-            errors << "#{File.basename(entry.name)}: #{receipt.errors.full_messages.join(', ')}"
+      # Expand all uploads into a flat list of { path:, filename:, content_type: }
+      entries = []
+      uploaded.each do |file|
+        name = file.original_filename.to_s
+        if file.content_type == "application/zip" || name.end_with?(".zip")
+          Zip::File.open(file.path) do |zip_file|
+            zip_file.each do |entry|
+              next if entry.directory?
+              next if File.basename(entry.name).start_with?(".")
+              next if entry.name.include?("__MACOSX")
+              next unless entry.name.match?(/\.(jpg|jpeg|png|gif|pdf)$/i)
+              tmp_path = File.join(tmpdir, "#{entries.size}_#{File.basename(entry.name)}")
+              entry.get_input_stream { |is| File.binwrite(tmp_path, is.read) }
+              ext = File.extname(entry.name).downcase
+              ct = ext == ".pdf" ? "application/pdf" : "image/#{ext.delete('.')}"
+              entries << { path: tmp_path, filename: File.basename(entry.name), content_type: ct }
+            end
           end
+        elsif name.match?(/\.(jpg|jpeg|png|gif|pdf)$/i)
+          entries << { path: file.path, filename: name, content_type: file.content_type }
+        end
+      end
+
+      entries.each do |entry|
+        receipt = user.receipts.build(
+          vendor: "Processing...",
+          expense_date: Date.today,
+          payment_method: payment_method,
+          status: :processing
+        )
+        receipt.expenses.build(
+          description: "Processing...",
+          amount: 0.01,
+          expense_category: fallback_category
+        )
+        if receipt.save
+          receipt.file.attach(
+            io: File.open(entry[:path], "rb"),
+            filename: entry[:filename],
+            content_type: entry[:content_type]
+          )
+          AnalyzeReceiptJob.perform_later(receipt.id)
+          count += 1
+        else
+          errors << "#{entry[:filename]}: #{receipt.errors.full_messages.join(', ')}"
         end
       end
     end

@@ -33,29 +33,34 @@ class Admin::ChargesController < Admin::BaseController
     charges = charges.where(payment_method_id: params[:payment_method_id]) if params[:payment_method_id].present?
 
     csv_data = CSV.generate(headers: true) do |csv|
-      csv << [ "Date", "Payment Method", "Description", "Amount", "Status", "Expense Category", "Expense Description", "Expense Amount" ]
+      csv << [ "Date", "Payment Method", "Description", "Amount", "Expense Category", "Expense Description", "Expense Amount" ]
 
       charges.each do |charge|
-        expenses = charge.receipts.flat_map(&:expenses) + charge.charge_expenses
-        status = charge.matched_at? ? "Matched" : "Unmatched"
+        charge_cols = [
+          charge.transaction_date.strftime("%m/%d/%Y"),
+          charge.payment_method.display_name,
+          charge.description,
+          charge.amount
+        ]
 
-        if expenses.size <= 1
-          exp = expenses.first
-          csv << [
-            charge.transaction_date.strftime("%m/%d/%Y"),
-            charge.payment_method.display_name,
-            charge.description,
-            charge.amount,
-            status,
-            exp&.expense_category&.name,
-            exp&.description,
-            exp&.amount
-          ]
-        else
-          csv << [ charge.transaction_date.strftime("%m/%d/%Y"), charge.payment_method.display_name, charge.description, charge.amount, status, nil, nil, nil ]
-          expenses.each do |exp|
-            csv << [ nil, nil, nil, nil, nil, exp.expense_category&.name, exp.description, exp.amount ]
+        expense_rows = []
+
+        charge.receipts.each do |receipt|
+          receipt_total = receipt.expenses.sum(&:amount)
+          ratio = receipt_total > 0 ? charge.amount / receipt_total.to_f : 1.0
+          receipt.expenses.each do |exp|
+            expense_rows << [ exp.expense_category&.name, exp.description, (exp.amount * ratio).round(2) ]
           end
+        end
+
+        charge.charge_expenses.each do |exp|
+          expense_rows << [ exp.expense_category&.name, exp.description, exp.amount ]
+        end
+
+        if expense_rows.empty?
+          csv << charge_cols + [ nil, nil, nil ]
+        else
+          expense_rows.each { |exp_row| csv << charge_cols + exp_row }
         end
       end
     end
@@ -100,6 +105,7 @@ class Admin::ChargesController < Admin::BaseController
     if @charge.receipts.include?(receipt)
       @charge.receipts.delete(receipt)
     else
+      @charge.charge_expenses.destroy_all
       @charge.receipts = [ receipt ]
     end
 
@@ -121,6 +127,7 @@ class Admin::ChargesController < Admin::BaseController
     end
 
     ActiveRecord::Base.transaction do
+      @charge.receipts.clear
       @charge.charge_expenses.destroy_all
       rows.each do |row|
         @charge.charge_expenses.create!(
