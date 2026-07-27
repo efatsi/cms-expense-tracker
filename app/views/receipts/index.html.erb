@@ -35,34 +35,68 @@
 <% if @receipts.empty? %>
   <p class="text-gray-500 text-center py-12">No receipts yet. <%= link_to "Submit your first receipt", new_receipt_path, class: "text-green-camp hover:underline" %>.</p>
 <% else %>
-  <div class="bg-white rounded-lg border border-gray-200 overflow-hidden">
+  <div id="receipts-list" data-controller="list-sort" data-list-sort-columns-value='[{"name":"col-date","attr":"data-sort-val"},{"name":"col-total","attr":"data-sort-val"},"col-employee","col-method","col-vendor","col-category","col-status","col-charges"]' class="bg-white rounded-lg border border-gray-200 overflow-hidden">
     <table class="w-full text-sm">
       <thead class="bg-gray-50 border-b border-gray-200">
         <tr>
           <% if @show_all %>
-            <th class="text-left px-4 py-3 font-medium text-gray-600">Employee</th>
+            <th class="text-left px-4 py-3 font-medium text-gray-600">
+              <button class="sort" data-sort="col-employee" data-list-sort-target="btn">
+                Employee<span class="sort-icon text-gray-400"> ↕</span>
+              </button>
+            </th>
           <% end %>
-          <th class="text-left px-4 py-3 font-medium text-gray-600">Date</th>
-          <th class="text-left px-4 py-3 font-medium text-gray-600">Payment Method</th>
-          <th class="text-left px-4 py-3 font-medium text-gray-600">Vendor</th>
-          <th class="text-left px-4 py-3 font-medium text-gray-600">Category</th>
-          <th class="text-right px-4 py-3 font-medium text-gray-600">Total</th>
+          <th class="text-left px-4 py-3 font-medium text-gray-600">
+            <button class="sort" data-sort="col-date" data-list-sort-target="btn">
+              Date<span class="sort-icon text-gray-400"> ↕</span>
+            </button>
+          </th>
+          <th class="text-left px-4 py-3 font-medium text-gray-600">
+            <button class="sort" data-sort="col-method" data-list-sort-target="btn">
+              Payment Method<span class="sort-icon text-gray-400"> ↕</span>
+            </button>
+          </th>
+          <th class="text-left px-4 py-3 font-medium text-gray-600">
+            <button class="sort" data-sort="col-vendor" data-list-sort-target="btn">
+              Vendor<span class="sort-icon text-gray-400"> ↕</span>
+            </button>
+          </th>
+          <th class="text-left px-4 py-3 font-medium text-gray-600">
+            <button class="sort" data-sort="col-category" data-list-sort-target="btn">
+              Category<span class="sort-icon text-gray-400"> ↕</span>
+            </button>
+          </th>
+          <th class="text-right px-4 py-3 font-medium text-gray-600">
+            <button class="sort" data-sort="col-total" data-list-sort-target="btn">
+              Total<span class="sort-icon text-gray-400"> ↕</span>
+            </button>
+          </th>
           <% if current_user.admin? %>
-            <th class="text-left px-4 py-3 font-medium text-gray-600">Status</th>
-            <th class="text-left px-4 py-3 font-medium text-gray-600">Charges</th>
+            <th class="text-left px-4 py-3 font-medium text-gray-600">
+              <button class="sort" data-sort="col-status" data-list-sort-target="btn">
+                Status<span class="sort-icon text-gray-400"> ↕</span>
+              </button>
+            </th>
+            <th class="text-left px-4 py-3 font-medium text-gray-600">
+              <button class="sort" data-sort="col-charges" data-list-sort-target="btn">
+                Charges<span class="sort-icon text-gray-400"> ↕</span>
+              </button>
+            </th>
           <% end %>
         </tr>
       </thead>
-      <tbody class="divide-y divide-gray-100">
+      <tbody class="list-tbody divide-y divide-gray-100">
         <% @receipts.each do |receipt| %>
           <tr class="hover:bg-gray-50 cursor-pointer" data-controller="row-link" data-href="<%= receipt_path(receipt) %>" data-action="click->row-link#navigate">
             <% if @show_all %>
-              <td class="px-4 py-3 text-gray-700"><%= receipt.user.name %></td>
+              <td class="col-employee px-4 py-3 text-gray-700"><%= receipt.user.name %></td>
             <% end %>
-            <td class="px-4 py-3 text-gray-700"><%= receipt.expense_date.strftime("%b %d, %Y") %></td>
-            <td class="px-4 py-3 text-gray-600"><%= receipt.payment_method.display_name %></td>
-            <td class="px-4 py-3 font-medium"><%= receipt.vendor %></td>
-            <td class="px-4 py-3">
+            <td class="col-date px-4 py-3 text-gray-700" data-sort-val="<%= receipt.expense_date.strftime("%Y%m%d") %>">
+              <%= receipt.expense_date.strftime("%b %d, %Y") %>
+            </td>
+            <td class="col-method px-4 py-3 text-gray-600"><%= receipt.payment_method.display_name %></td>
+            <td class="col-vendor px-4 py-3 font-medium"><%= receipt.vendor %></td>
+            <td class="col-category px-4 py-3">
               <% categories = receipt.expenses.map(&:expense_category).uniq %>
               <% categories.each do |cat| %>
                 <div>
@@ -71,9 +105,11 @@
                 </div>
               <% end %>
             </td>
-            <td class="px-4 py-3 text-right font-medium"><%= number_to_currency(receipt.total_amount) %></td>
+            <td class="col-total px-4 py-3 text-right font-medium" data-sort-val="<%= format("%015.2f", receipt.total_amount.to_f) %>">
+              <%= number_to_currency(receipt.total_amount) %>
+            </td>
             <% if current_user.admin? %>
-              <td class="px-4 py-3">
+              <td class="col-status px-4 py-3">
                 <% badge_class, badge_label = if receipt.matched?
                     [ "bg-green-100 text-green-800", "Matched" ]
                   elsif receipt.processing?
@@ -87,7 +123,7 @@
                   <%= badge_label %>
                 </span>
               </td>
-              <td class="px-4 py-3">
+              <td class="col-charges px-4 py-3">
                 <% charge_coverage = receipt.charges.sum(&:amount) %>
                 <% if charge_coverage >= receipt.total_amount %>
                   <span class="inline-flex px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">Covered</span>

@@ -3,17 +3,12 @@ import List from "list.js"
 
 export default class extends Controller {
   static targets = ["btn", "exportLink", "sortInput", "orderInput"]
+  static values  = { columns: Array }
 
   connect() {
     this.list = new List(this.element.id, {
       listClass: "list-tbody",
-      valueNames: [
-        { name: "col-date",   attr: "data-sort-val" },
-        { name: "col-amount", attr: "data-sort-val" },
-        "col-method",
-        "col-description",
-        "col-status"
-      ]
+      valueNames: this.columnsValue
     })
 
     this._restoring = false
