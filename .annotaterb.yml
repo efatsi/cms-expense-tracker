@@ -1,0 +1,11 @@
+position_in_class: bottom
+show_indexes: true
+show_foreign_keys: true
+hide_limit_column_types: integer,bigint,boolean
+hide_default_column_types: json,jsonb,hstore
+exclude_tests: true
+exclude_fixtures: true
+exclude_factories: true
+exclude_serializers: true
+exclude_controllers: true
+exclude_helpers: true

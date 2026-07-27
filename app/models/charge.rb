@@ -29,3 +29,25 @@ class Charge < ApplicationRecord
     receipts.joins(:expenses).sum("expenses.amount")
   end
 end
+
+# == Schema Information
+#
+# Table name: charges
+#
+#  id                :bigint           not null, primary key
+#  amount            :decimal(10, 2)
+#  description       :string
+#  matched_at        :datetime
+#  transaction_date  :date
+#  created_at        :datetime         not null
+#  updated_at        :datetime         not null
+#  payment_method_id :bigint           not null
+#
+# Indexes
+#
+#  index_charges_on_payment_method_id  (payment_method_id)
+#
+# Foreign Keys
+#
+#  fk_rails_...  (payment_method_id => payment_methods.id)
+#

@@ -60,7 +60,9 @@ class Admin::ChargesController < Admin::BaseController
         if expense_rows.empty?
           csv << charge_cols + [ nil, nil, nil ]
         else
-          expense_rows.each { |exp_row| csv << charge_cols + exp_row }
+          expense_rows.each_with_index do |exp_row, i|
+            csv << (i == 0 ? charge_cols : [ nil, nil, nil, nil ]) + exp_row
+          end
         end
       end
     end

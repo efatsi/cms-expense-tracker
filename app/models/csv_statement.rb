@@ -15,3 +15,23 @@ class CsvStatement < ApplicationRecord
     dates.minmax if dates.any?
   end
 end
+
+# == Schema Information
+#
+# Table name: csv_statements
+#
+#  id                :bigint           not null, primary key
+#  imported_count    :integer
+#  skipped_count     :integer
+#  created_at        :datetime         not null
+#  updated_at        :datetime         not null
+#  payment_method_id :bigint           not null
+#
+# Indexes
+#
+#  index_csv_statements_on_payment_method_id  (payment_method_id)
+#
+# Foreign Keys
+#
+#  fk_rails_...  (payment_method_id => payment_methods.id)
+#
