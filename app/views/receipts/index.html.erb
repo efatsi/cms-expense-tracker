@@ -1,7 +1,7 @@
 <div class="flex items-center justify-between mb-6">
   <div class="flex items-center gap-4">
     <h1 class="text-2xl font-serif font-semibold">
-      <%= @filtered_user ? "#{@filtered_user.name}'s Receipts" : (@show_all ? "All Receipts" : "My Receipts") %>
+      <%= @filtered_user ? "#{@filtered_user.name}'s Receipts" : (@show_all ? "All Receipts" : "Receipts") %>
     </h1>
   </div>
   <div class="flex items-center gap-2">
@@ -13,7 +13,7 @@
 </div>
 
 <% if @restore_url %>
-  <script>history.replaceState(null, "", "<%= @restore_url %>")</script>
+  <script>history.replaceState(null, "", "<%= raw @restore_url %>")</script>
 <% end %>
 
 <% if current_user.admin? %>

@@ -11,7 +11,15 @@ class Admin::ChargesController < Admin::BaseController
     @associated_receipt = @charge.receipts.first
   end
 
-  CHARGE_FILTER_PARAMS = %w[payment_method_id unmatched_only].freeze
+  CHARGE_FILTER_PARAMS = %w[payment_method_id unmatched_only sort order].freeze
+
+  SORT_COLUMN_MAP = {
+    "col-date"        => "charges.transaction_date",
+    "col-amount"      => "charges.amount",
+    "col-description" => "charges.description",
+    "col-status"      => "charges.matched_at",
+    "col-method"      => "payment_methods.name"
+  }.freeze
 
   def index
     @filter_params = resolve_filters(:charges_filters, CHARGE_FILTER_PARAMS)
@@ -31,9 +39,16 @@ class Admin::ChargesController < Admin::BaseController
   end
 
   def export
+    sort_col   = SORT_COLUMN_MAP[params[:sort]]
+    sort_order = params[:order] == "asc" ? "asc" : "desc"
+
     charges = Charge.includes(:payment_method, charge_expenses: :expense_category, receipts: { expenses: :expense_category })
-                    .order(transaction_date: :desc)
     charges = charges.where(payment_method_id: params[:payment_method_id]) if params[:payment_method_id].present?
+    charges = if sort_col
+      charges.joins(:payment_method).order(Arel.sql("#{sort_col} #{sort_order}"))
+    else
+      charges.order(transaction_date: :desc)
+    end
 
     csv_data = CSV.generate(headers: true) do |csv|
       csv << [ "Date", "Payment Method", "Description", "Amount", "Expense Category", "Expense Description", "Expense Amount" ]

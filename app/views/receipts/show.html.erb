@@ -101,7 +101,9 @@
   <div class="bg-white rounded-lg border border-gray-200 overflow-hidden mb-6">
     <div class="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
       <h2 class="font-semibold">Matched Charges</h2>
-      <span class="text-sm text-gray-500"><%= number_to_currency(@receipt.charges_total) %> of <%= number_to_currency(@receipt.total_amount) %></span>
+      <% if @receipt.charges_total != @receipt.total_amount %>
+        <span class="text-sm text-gray-500"><%= number_to_currency(@receipt.charges_total) %> of <%= number_to_currency(@receipt.total_amount) %></span>
+      <% end %>
     </div>
     <table class="w-full text-sm">
       <thead class="bg-gray-50">
