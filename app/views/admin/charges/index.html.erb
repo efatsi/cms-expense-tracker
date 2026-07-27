@@ -23,25 +23,49 @@
   <% end %>
 </div>
 
-<div class="bg-white rounded-lg border border-gray-200 overflow-hidden">
+<div id="charges-list" data-controller="list-sort" class="bg-white rounded-lg border border-gray-200 overflow-hidden">
   <table class="w-full text-sm">
     <thead class="bg-gray-50 border-b border-gray-200">
       <tr>
-        <th class="text-left px-4 py-3 font-medium text-gray-600">Date</th>
-        <th class="text-left px-4 py-3 font-medium text-gray-600">Payment Method</th>
-        <th class="text-left px-4 py-3 font-medium text-gray-600">Description</th>
-        <th class="text-right px-4 py-3 font-medium text-gray-600">Amount</th>
-        <th class="text-left px-4 py-3 font-medium text-gray-600">Status</th>
+        <th class="text-left px-4 py-3 font-medium text-gray-600">
+          <button class="sort" data-sort="col-date" data-list-sort-target="btn">
+            Date<span class="sort-icon text-gray-400"> ↕</span>
+          </button>
+        </th>
+        <th class="text-left px-4 py-3 font-medium text-gray-600">
+          <button class="sort" data-sort="col-method" data-list-sort-target="btn">
+            Payment Method<span class="sort-icon text-gray-400"> ↕</span>
+          </button>
+        </th>
+        <th class="text-left px-4 py-3 font-medium text-gray-600">
+          <button class="sort" data-sort="col-description" data-list-sort-target="btn">
+            Description<span class="sort-icon text-gray-400"> ↕</span>
+          </button>
+        </th>
+        <th class="text-right px-4 py-3 font-medium text-gray-600">
+          <button class="sort" data-sort="col-amount" data-list-sort-target="btn">
+            Amount<span class="sort-icon text-gray-400"> ↕</span>
+          </button>
+        </th>
+        <th class="text-left px-4 py-3 font-medium text-gray-600">
+          <button class="sort" data-sort="col-status" data-list-sort-target="btn">
+            Status<span class="sort-icon text-gray-400"> ↕</span>
+          </button>
+        </th>
       </tr>
     </thead>
-    <tbody class="divide-y divide-gray-100">
+    <tbody class="list-tbody divide-y divide-gray-100">
       <% @charges.each do |charge| %>
         <tr class="hover:bg-gray-50 cursor-pointer" data-controller="row-link" data-href="<%= admin_charge_path(charge) %>" data-action="click->row-link#navigate">
-          <td class="px-4 py-3"><%= charge.transaction_date.strftime("%b %d, %Y") %></td>
-          <td class="px-4 py-3 text-gray-600"><%= charge.payment_method.display_name %></td>
-          <td class="px-4 py-3"><%= charge.description %></td>
-          <td class="px-4 py-3 text-right font-medium"><%= number_to_currency(charge.amount) %></td>
-          <td class="px-4 py-3">
+          <td class="col-date px-4 py-3" data-sort-val="<%= charge.transaction_date.strftime("%Y%m%d") %>">
+            <%= charge.transaction_date.strftime("%b %d, %Y") %>
+          </td>
+          <td class="col-method px-4 py-3 text-gray-600"><%= charge.payment_method.display_name %></td>
+          <td class="col-description px-4 py-3"><%= charge.description %></td>
+          <td class="col-amount px-4 py-3 text-right font-medium" data-sort-val="<%= format("%015.2f", charge.amount.to_f) %>">
+            <%= number_to_currency(charge.amount) %>
+          </td>
+          <td class="col-status px-4 py-3">
             <% if charge.matched_at.present? %>
               <span class="inline-flex px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">Matched</span>
             <% else %>
