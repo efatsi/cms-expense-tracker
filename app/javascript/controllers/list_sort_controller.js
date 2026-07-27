@@ -21,10 +21,18 @@ export default class extends Controller {
       this._syncSortState()
     })
 
-    // Restore sort from URL on load
+    // Restore sort from URL, falling back to localStorage
     const url = new URL(window.location)
-    const sortField = url.searchParams.get("sort")
-    const sortOrder = url.searchParams.get("order")
+    let sortField = url.searchParams.get("sort")
+    let sortOrder = url.searchParams.get("order")
+
+    if (!sortField || !sortOrder) {
+      try {
+        const stored = JSON.parse(localStorage.getItem(this._storageKey()))
+        if (stored) { sortField = stored.field; sortOrder = stored.order }
+      } catch (e) {}
+    }
+
     if (sortField && sortOrder) {
       this.list.sort(sortField, { order: sortOrder })
     }
@@ -60,6 +68,12 @@ export default class extends Controller {
 
     history.replaceState(null, "", url.toString())
 
+    if (sort) {
+      try { localStorage.setItem(this._storageKey(), JSON.stringify({ field: sort.field, order: sort.order })) } catch (e) {}
+    } else {
+      try { localStorage.removeItem(this._storageKey()) } catch (e) {}
+    }
+
     if (this.hasExportLinkTarget) {
       const exportUrl = new URL(this.exportLinkTarget.href)
       if (sort) {
@@ -71,6 +85,10 @@ export default class extends Controller {
       }
       this.exportLinkTarget.href = exportUrl.toString()
     }
+  }
+
+  _storageKey() {
+    return `list-sort:${window.location.pathname}`
   }
 
   _currentSort() {
