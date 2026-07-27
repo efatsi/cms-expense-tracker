@@ -52,12 +52,14 @@ class Admin::ChargesController < Admin::BaseController
           receipt_total = receipt.expenses.sum(&:amount)
           ratio = receipt_total > 0 ? charge.amount / receipt_total.to_f : 1.0
           receipt.expenses.each do |exp|
-            expense_rows << [ exp.expense_category&.name, exp.description, (exp.amount * ratio).round(2) ]
+            cat = exp.expense_category
+            expense_rows << [ cat && "#{cat.section}: #{cat.name}", exp.description, (exp.amount * ratio).round(2) ]
           end
         end
 
         charge.charge_expenses.each do |exp|
-          expense_rows << [ exp.expense_category&.name, exp.description, exp.amount ]
+          cat = exp.expense_category
+          expense_rows << [ cat && "#{cat.section}: #{cat.name}", exp.description, exp.amount ]
         end
 
         if expense_rows.empty?
