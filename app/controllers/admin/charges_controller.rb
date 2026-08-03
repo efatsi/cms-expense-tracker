@@ -42,7 +42,7 @@ class Admin::ChargesController < Admin::BaseController
     sort_col   = SORT_COLUMN_MAP[params[:sort]]
     sort_order = params[:order] == "asc" ? "asc" : "desc"
 
-    charges = Charge.includes(:payment_method, charge_expenses: :expense_category, receipts: { expenses: :expense_category })
+    charges = Charge.includes(:payment_method, charge_expenses: :expense_category, receipts: { expenses: :expense_category, charges: [] })
     charges = charges.where(payment_method_id: params[:payment_method_id]) if params[:payment_method_id].present?
     charges = if sort_col
       charges.joins(:payment_method).order(Arel.sql("#{sort_col} #{sort_order}"))
@@ -50,10 +50,21 @@ class Admin::ChargesController < Admin::BaseController
       charges.order(transaction_date: :desc)
     end
 
+    all_charges = charges.to_a
+
+    # Pre-compute expense distributions per receipt across all its charges
+    receipt_distributions = {}
+    all_charges.each do |charge|
+      charge.receipts.each do |receipt|
+        next if receipt_distributions.key?(receipt.id)
+        receipt_distributions[receipt.id] = distribute_receipt_expenses(receipt)
+      end
+    end
+
     csv_data = CSV.generate(headers: true) do |csv|
       csv << [ "Date", "Payment Method", "Description", "Amount", "Expense Category", "Expense Description", "Expense Amount" ]
 
-      charges.each do |charge|
+      all_charges.each do |charge|
         charge_cols = [
           charge.transaction_date.strftime("%m/%d/%Y"),
           charge.payment_method.display_name,
@@ -64,11 +75,10 @@ class Admin::ChargesController < Admin::BaseController
         expense_rows = []
 
         charge.receipts.each do |receipt|
-          receipt_total = receipt.expenses.sum(&:amount)
-          ratio = receipt_total > 0 ? charge.amount / receipt_total.to_f : 1.0
-          receipt.expenses.each do |exp|
+          distribution = receipt_distributions[receipt.id] || {}
+          (distribution[charge.id] || []).each do |exp, allocated|
             cat = exp.expense_category
-            expense_rows << [ cat && "#{cat.section}: #{cat.name}", exp.description, (exp.amount * ratio).round(2) ]
+            expense_rows << [ cat && "#{cat.section}: #{cat.name}", exp.description, allocated.round(2) ]
           end
         end
 
@@ -235,5 +245,40 @@ class Admin::ChargesController < Admin::BaseController
     Date.strptime(value.to_s, "%m/%d/%Y")
   rescue ArgumentError, TypeError
     nil
+  end
+
+  # Distributes a receipt's expenses across its charges, biggest to smallest.
+  # Returns a hash of charge_id => [[expense, allocated_amount], ...]
+  def distribute_receipt_expenses(receipt)
+    sorted_charges = receipt.charges.sort_by { |c| -c.amount.to_f }
+    sorted_expenses = receipt.expenses.sort_by { |e| -e.amount.to_f }
+
+    expense_pool = sorted_expenses.map { |e| [e, e.amount.to_f] }
+    exp_idx = 0
+    distribution = {}
+
+    sorted_charges.each do |charge|
+      rows = []
+      remaining = charge.amount.to_f
+
+      while remaining > 0.001 && exp_idx < expense_pool.size
+        exp, exp_remaining = expense_pool[exp_idx]
+
+        if exp_remaining <= remaining + 0.001
+          rows << [exp, exp_remaining]
+          remaining -= exp_remaining
+          expense_pool[exp_idx][1] = 0
+          exp_idx += 1
+        else
+          rows << [exp, remaining]
+          expense_pool[exp_idx][1] -= remaining
+          remaining = 0
+        end
+      end
+
+      distribution[charge.id] = rows
+    end
+
+    distribution
   end
 end
