@@ -22,6 +22,7 @@ end
 # Table name: receipts
 #
 #  id                :bigint           not null, primary key
+#  ai_error          :text
 #  approved_at       :datetime
 #  charges_total     :decimal(10, 2)   default(0.0), not null
 #  expense_date      :date

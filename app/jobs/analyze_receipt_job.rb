@@ -39,6 +39,6 @@ class AnalyzeReceiptJob < ApplicationJob
     end
   rescue => e
     Rails.logger.error("AnalyzeReceiptJob failed for receipt #{receipt_id}: #{e.message}")
-    Receipt.find_by(id: receipt_id)&.update_columns(status: 0)
+    Receipt.find_by(id: receipt_id)&.update_columns(status: 0, ai_error: e.message)
   end
 end

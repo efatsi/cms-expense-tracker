@@ -1,3 +1,16 @@
+<% if @receipt.ai_error.present? %>
+  <div data-controller="dismiss"
+       data-dismiss-key-value="ai-error-<%= @receipt.id %>"
+       data-dismiss-target="container"
+       class="mb-4 flex items-start gap-3 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
+    <svg class="mt-0.5 h-4 w-4 flex-shrink-0 text-red-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M12 3a9 9 0 100 18A9 9 0 0012 3z" />
+    </svg>
+    <span class="flex-1"><strong>AI processing error:</strong> <%= @receipt.ai_error %></span>
+    <button data-action="dismiss#close" class="text-red-400 hover:text-red-600 leading-none text-lg">&times;</button>
+  </div>
+<% end %>
+
 <div data-controller="reprocess">
   <div data-reprocess-target="modal"
        class="fixed inset-0 z-50 flex items-center justify-center hidden"
