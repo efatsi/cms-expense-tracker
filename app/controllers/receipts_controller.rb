@@ -105,7 +105,7 @@ class ReceiptsController < ApplicationController
       return render :bulk_upload
     end
 
-    fallback_category = ExpenseCategory.active.first
+    fallback_category = ExpenseCategory.active.find_by(name: "Uncategorized") || ExpenseCategory.active.first
     unless fallback_category
       flash.now[:alert] = "No expense categories found. Please configure categories first."
       return render :bulk_upload

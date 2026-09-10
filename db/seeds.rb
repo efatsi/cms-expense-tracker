@@ -11,6 +11,7 @@ end
 Expense.delete_all
 ExpenseCategory.delete_all
 {
+  nil            => [ "Uncategorized" ],
   "Store"        => [ "Merch + Uniforms", "Photos", "Rx" ],
   "Admin"        => [ "Payroll", "Staff Training", "Pro Fees (financial, legal, comp...)",
                       "Laundry", "Contributions / Donations", "Employee Benefits",

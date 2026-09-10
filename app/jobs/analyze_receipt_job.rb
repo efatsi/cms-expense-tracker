@@ -5,7 +5,7 @@ class AnalyzeReceiptJob < ApplicationJob
     receipt = Receipt.find(receipt_id)
     return unless receipt.file.attached?
 
-    fallback_category_id = ExpenseCategory.active.find_by(name: "Miscellaneous")&.id || ExpenseCategory.active.first&.id
+    fallback_category_id = ExpenseCategory.active.find_by(name: "Uncategorized")&.id || ExpenseCategory.active.first&.id
 
     receipt.file.open do |tmp|
       result = ReceiptAnalysisService.new(
