@@ -22,7 +22,8 @@ ExpenseCategory.delete_all
                       "Staff Broker Fees", "Wolfoods" ],
   "Healthcare"   => [ "Payroll", "Supplies" ],
   "Program"      => [ "PD Salary", "Counselor Salaries", "Supplies",
-                      "Counselor Training + Certs" ]
+                      "Counselor Training + Certs" ],
+  "Personal"     => [ "Ann's Personal" ]
 }.each do |section, names|
   names.each do |name|
     ExpenseCategory.create!(name: name, section: section, active: true)
