@@ -1,7 +1,7 @@
 class ReceiptsController < ApplicationController
   before_action :set_receipt, only: [ :show, :edit, :update, :destroy, :approve, :reprocess ]
   before_action :authorize_receipt!, only: [ :show, :edit, :update, :destroy, :approve, :reprocess ]
-  before_action :require_admin!, only: [ :bulk_upload ]
+  before_action :require_admin!, only: [ :bulk_upload, :bulk_upload_single ]
 
   RECEIPT_FILTER_PARAMS = %w[user_id unmatched_charges].freeze
 
@@ -174,6 +174,82 @@ class ReceiptsController < ApplicationController
   rescue => e
     flash.now[:alert] = "Error processing zip: #{e.message}"
     render :bulk_upload
+  end
+
+  def bulk_upload_single
+    user = User.find_by(email: params[:user_email])
+    return render json: { error: "User not found" }, status: :unprocessable_entity unless user
+
+    file = params[:file]
+    return render json: { error: "No file provided" }, status: :bad_request unless file
+
+    payment_method = user.default_payment_method || PaymentMethod.first
+    return render json: { error: "No payment method available" }, status: :unprocessable_entity unless payment_method
+
+    fallback_category = ExpenseCategory.active.find_by(name: "Uncategorized") || ExpenseCategory.active.first
+    return render json: { error: "No expense categories found" }, status: :unprocessable_entity unless fallback_category
+
+    receipt_ids = []
+    errors = []
+
+    require "zip"
+    Dir.mktmpdir do |tmpdir|
+      entries = []
+      name = file.original_filename.to_s
+
+      if file.content_type == "application/zip" || name.end_with?(".zip")
+        Zip::File.open(file.path) do |zip_file|
+          zip_file.each do |entry|
+            next if entry.directory?
+            next if File.basename(entry.name).start_with?(".")
+            next if entry.name.include?("__MACOSX")
+            next unless entry.name.match?(/\.(jpg|jpeg|png|gif|pdf)$/i)
+            tmp_path = File.join(tmpdir, "#{entries.size}_#{File.basename(entry.name)}")
+            entry.get_input_stream { |is| File.binwrite(tmp_path, is.read) }
+            ext = File.extname(entry.name).downcase
+            ct = ext == ".pdf" ? "application/pdf" : "image/#{ext.delete('.')}"
+            entries << { path: tmp_path, filename: File.basename(entry.name), content_type: ct }
+          end
+        end
+      elsif name.match?(/\.(jpg|jpeg|png|gif|pdf)$/i)
+        entries << { path: file.path, filename: name, content_type: file.content_type }
+      else
+        return render json: { error: "Unsupported file type: #{name}" }, status: :unprocessable_entity
+      end
+
+      entries.each do |entry|
+        receipt = user.receipts.build(
+          vendor: "Processing...",
+          expense_date: Date.today,
+          payment_method: payment_method,
+          status: :processing
+        )
+        receipt.expenses.build(
+          description: "Processing...",
+          amount: 0.01,
+          expense_category: fallback_category
+        )
+        if receipt.save
+          receipt.file.attach(
+            io: File.open(entry[:path], "rb"),
+            filename: entry[:filename],
+            content_type: entry[:content_type]
+          )
+          AnalyzeReceiptJob.perform_later(receipt.id)
+          receipt_ids << receipt.id
+        else
+          errors << "#{entry[:filename]}: #{receipt.errors.full_messages.join(', ')}"
+        end
+      end
+    end
+
+    if errors.any? && receipt_ids.empty?
+      render json: { error: errors.join("; ") }, status: :unprocessable_entity
+    else
+      render json: { receipt_ids: receipt_ids }
+    end
+  rescue => e
+    render json: { error: e.message }, status: :unprocessable_entity
   end
 
   private

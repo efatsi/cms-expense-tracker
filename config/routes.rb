@@ -8,6 +8,7 @@ Rails.application.routes.draw do
       post :analyze
       get  :bulk_upload
       post :bulk_upload
+      post :bulk_upload_single
     end
     member do
       post :approve
