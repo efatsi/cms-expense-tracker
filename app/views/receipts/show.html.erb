@@ -129,7 +129,10 @@
 <% if @receipt.file.attached? %>
   <div class="bg-white rounded-lg border border-gray-200 p-6">
     <div class="flex items-center justify-between mb-3">
-      <h2 class="font-semibold">Attached Receipt</h2>
+      <div>
+        <h2 class="font-semibold">Attached Receipt</h2>
+        <p class="text-xs text-gray-400 mt-0.5"><%= @receipt.file.filename %></p>
+      </div>
       <%= link_to "Download", rails_blob_path(@receipt.file, disposition: "attachment"), class: "text-sm text-green-camp hover:text-green-dark" %>
     </div>
     <% if @receipt.file.image? %>
