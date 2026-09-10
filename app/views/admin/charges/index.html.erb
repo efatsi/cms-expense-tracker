@@ -7,6 +7,8 @@
   <div class="flex items-center justify-between mb-6">
     <h1 class="text-2xl font-serif font-semibold">AmEx Charges</h1>
     <div class="flex items-center gap-2">
+      <%= button_to "Auto-Associate", auto_associate_admin_charges_path, method: :post,
+            class: "bg-green-camp text-white px-4 py-1.5 rounded text-sm hover:bg-green-dark cursor-pointer" %>
       <%= link_to "Export CSV", export_admin_charges_path(payment_method_id: @filter_params[:payment_method_id].presence), class: "bg-white border border-gray-300 text-gray-700 px-4 py-1.5 rounded text-sm hover:bg-gray-50", data: { "list-sort-target": "exportLink", turbo: false } %>
       <%= link_to "Import Statement", import_admin_charges_path, class: "bg-white border border-gray-300 text-gray-700 px-4 py-1.5 rounded text-sm hover:bg-gray-50" %>
     </div>

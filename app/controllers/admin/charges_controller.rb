@@ -100,6 +100,27 @@ class Admin::ChargesController < Admin::BaseController
     send_data csv_data, filename: "charges-#{Date.today}.csv", type: "text/csv", disposition: "attachment"
   end
 
+  def auto_associate
+    unmatched = Charge.unmatched.includes(:payment_method, :receipts)
+    count = 0
+
+    unmatched.each do |charge|
+      nearby = charge.nearby_receipts
+      amount_matches = nearby.select { |r| r.total_amount == charge.amount }
+      next unless amount_matches.size == 1
+
+      receipt = amount_matches.first
+      charge.charge_expenses.destroy_all
+      charge.receipts = [ receipt ]
+      receipt.update_column(:charges_total, receipt.charges.reload.sum(:amount))
+      charge.update!(matched_at: Time.current)
+      receipt.update!(status: :matched)
+      count += 1
+    end
+
+    redirect_to admin_charges_path, notice: "#{count} charge#{'s' unless count == 1} auto-associated."
+  end
+
   def import
     if request.get?
       @payment_methods = PaymentMethod.order(:name)

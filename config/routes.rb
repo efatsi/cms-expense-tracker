@@ -28,6 +28,7 @@ Rails.application.routes.draw do
         get :import
         post :import
         get :export
+        post :auto_associate
       end
       member do
         post :associate
