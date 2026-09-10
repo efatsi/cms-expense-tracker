@@ -131,7 +131,7 @@ export default class extends Controller {
         statusHtml = `
           <svg class="animate-spin h-4 w-4 text-green-600 flex-shrink-0" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
             <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 22 6.477 22 12h-4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 12 6.477 12 12h4z"></path>
           </svg>`
       } else if (item.status === "done") {
         statusHtml = `
@@ -143,16 +143,28 @@ export default class extends Controller {
           <svg class="h-4 w-4 text-red-500 flex-shrink-0" title="${this._escHtml(item.errorMsg || 'Upload failed')}" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
           </svg>`
+      } else if (item.status === "pending" && this._uploading) {
+        statusHtml = `<div class="w-4 flex-shrink-0"></div>`
       }
 
-      const removeBtn = item.status === "pending"
+      let nameHtml
+      if (item.status === "done" && item.receiptIds && item.receiptIds.length > 0) {
+        const href = item.receiptIds.length === 1
+          ? `/receipts/${item.receiptIds[0]}`
+          : `/receipts?ids=${item.receiptIds.join(",")}`
+        nameHtml = `<a href="${href}" class="text-sm text-green-700 hover:underline truncate flex-1">${this._escHtml(item.name)}</a>`
+      } else {
+        nameHtml = `<span class="text-sm text-gray-700 truncate flex-1">${this._escHtml(item.name)}</span>`
+      }
+
+      const removeBtn = item.status === "pending" && !this._uploading
         ? `<button type="button" data-action="bulk-drop#remove" data-index="${i}"
                    class="text-gray-300 hover:text-red-500 transition-colors flex-shrink-0 text-lg leading-none">&times;</button>`
         : `<div class="w-4 flex-shrink-0"></div>`
 
       return `
         <div class="flex items-center gap-2 py-1.5 px-3 rounded-md hover:bg-gray-50">
-          <span class="text-sm text-gray-700 truncate flex-1">${this._escHtml(item.name)}</span>
+          ${nameHtml}
           ${statusHtml}
           ${removeBtn}
         </div>`
