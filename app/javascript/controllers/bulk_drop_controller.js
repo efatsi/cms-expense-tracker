@@ -63,31 +63,46 @@ export default class extends Controller {
 
     for (let i = 0; i < this._items.length; i++) {
       const item = this._items[i]
-      item.status = "uploading"
-      this._render()
 
-      try {
-        const formData = new FormData()
-        formData.append("user_email", userEmail)
-        formData.append("file", item.file)
-
-        const response = await fetch(this.uploadUrlValue, {
-          method: "POST",
-          headers: { "X-CSRF-Token": csrfToken },
-          body: formData
-        })
-
-        const data = await response.json()
-        if (response.ok) {
-          item.status = "done"
-          item.receiptIds = data.receipt_ids
-        } else {
-          item.status = "error"
-          item.errorMsg = data.error || "Upload failed"
+      let lastError = null
+      for (let attempt = 1; attempt <= 2; attempt++) {
+        if (attempt === 2) {
+          item.status = "retrying"
+          this._render()
+          await new Promise(r => setTimeout(r, 1500))
         }
-      } catch (err) {
+
+        item.status = "uploading"
+        this._render()
+
+        try {
+          const formData = new FormData()
+          formData.append("user_email", userEmail)
+          formData.append("file", item.file)
+
+          const response = await fetch(this.uploadUrlValue, {
+            method: "POST",
+            headers: { "X-CSRF-Token": csrfToken },
+            body: formData
+          })
+
+          const data = await response.json()
+          if (response.ok) {
+            item.status = "done"
+            item.receiptIds = data.receipt_ids
+            lastError = null
+            break
+          } else {
+            lastError = data.error || "Upload failed"
+          }
+        } catch (err) {
+          lastError = err.message
+        }
+      }
+
+      if (lastError) {
         item.status = "error"
-        item.errorMsg = err.message
+        item.errorMsg = lastError
       }
 
       this._render()
@@ -120,14 +135,14 @@ export default class extends Controller {
 
   _render() {
     const hasFiles = this._items.length > 0
-    const allDone = hasFiles && this._items.every(item => item.status === "done")
+    const allDone = hasFiles && this._items.every(item => item.status === "done" || item.status === "error")
 
     this.emptyTarget.classList.toggle("hidden", hasFiles)
     this.submitTarget.disabled = !hasFiles || this._uploading || allDone
 
     this.listTarget.innerHTML = this._items.map((item, i) => {
       let statusHtml = ""
-      if (item.status === "uploading") {
+      if (item.status === "uploading" || item.status === "retrying") {
         statusHtml = `<div class="animate-spin h-4 w-4 rounded-full border-2 border-gray-200 border-t-green-600 flex-shrink-0"></div>`
       } else if (item.status === "done") {
         statusHtml = `
@@ -158,11 +173,18 @@ export default class extends Controller {
                    class="text-gray-300 hover:text-red-500 transition-colors flex-shrink-0 text-lg leading-none">&times;</button>`
         : `<div class="w-4 flex-shrink-0"></div>`
 
+      const errorHtml = item.status === "error" && item.errorMsg
+        ? `<div class="text-xs text-red-500 px-3 pb-1.5">${this._escHtml(item.errorMsg)}</div>`
+        : ""
+
       return `
-        <div class="flex items-center gap-2 py-1.5 px-3 rounded-md hover:bg-gray-50">
-          ${nameHtml}
-          ${statusHtml}
-          ${removeBtn}
+        <div class="rounded-md hover:bg-gray-50">
+          <div class="flex items-center gap-2 py-1.5 px-3">
+            ${nameHtml}
+            ${statusHtml}
+            ${removeBtn}
+          </div>
+          ${errorHtml}
         </div>`
     }).join("")
   }
