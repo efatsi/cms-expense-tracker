@@ -76,7 +76,7 @@ class ReceiptAnalysisService
   end
 
   def categories_text
-    ExpenseCategory.active.order(:section, :name).map do |cat|
+    ExpenseCategory.active.where.not(section: nil, name: nil).order(:section, :name).map do |cat|
       "#{cat.section} > #{cat.name}"
     end.join(", ")
   end
@@ -159,9 +159,9 @@ class ReceiptAnalysisService
   def resolve_category_ids(parsed)
     categories = ExpenseCategory.active.to_a
     # Primary lookup: "Section > Name"
-    full_map = categories.each_with_object({}) { |c, h| h["#{c.section.downcase} > #{c.name.downcase}"] = c.id }
+    full_map = categories.each_with_object({}) { |c, h| h["#{c.section.to_s.downcase} > #{c.name.to_s.downcase}"] = c.id }
     # Fallback: name-only
-    name_map = categories.each_with_object({}) { |c, h| h[c.name.downcase] = c.id }
+    name_map = categories.each_with_object({}) { |c, h| h[c.name.to_s.downcase] = c.id }
 
     parsed["expenses"]&.each do |expense|
       raw = expense["category"].to_s
