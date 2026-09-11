@@ -30,7 +30,7 @@ class AnalyzeReceiptJob < ApplicationJob
           next unless category_id
           receipt.expenses.build(
             description: exp["description"].presence || "Expense",
-            amount: exp["amount"].to_f.positive? ? exp["amount"].to_f : 0.01,
+            amount: exp["amount"].to_f.nonzero? || 0.01,
             expense_category_id: category_id
           )
         end
