@@ -14,10 +14,12 @@ namespace :receipts do
 
     entries.each_with_index do |a, i|
       entries[(i + 1)..].each do |b|
-        matches = []
+        amount_match = a[:total] > 0 && b[:total] > 0 && a[:total] == b[:total]
+        next unless amount_match
+
+        matches = [ :total ]
         matches << :vendor if a[:vendor].present? && b[:vendor].present? && a[:vendor] == b[:vendor]
         matches << :date   if a[:date].present?   && b[:date].present?   && a[:date] == b[:date]
-        matches << :total  if a[:total] > 0        && b[:total] > 0       && a[:total] == b[:total]
 
         next if matches.size < 2
 
