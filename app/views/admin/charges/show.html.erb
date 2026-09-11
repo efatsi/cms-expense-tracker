@@ -173,6 +173,63 @@
     </div>
   <% end %>
 
+  <% if @charge.charge_expenses.any? %>
+    <div class="bg-white rounded-lg border border-gray-200 p-6 mb-4" data-controller="expense-form">
+      <div class="flex items-center justify-between mb-4">
+        <h2 class="font-semibold">Edit Direct Expenses</h2>
+        <button type="button" data-action="expense-form#addRow" class="text-sm text-green-camp hover:text-green-dark font-medium">+ Add Expense</button>
+      </div>
+
+      <%= form_with url: save_expenses_admin_charge_path(@charge), method: :post do |f| %>
+        <div data-expense-form-target="rows">
+          <% @charge.charge_expenses.each_with_index do |exp, i| %>
+            <div class="expense-row grid grid-cols-12 gap-2 items-start mb-2">
+              <div class="col-span-3">
+                <select name="charge_expenses[<%= i %>][expense_category_id]" class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm">
+                  <option value="">Category</option>
+                  <%= grouped_expense_category_options(exp.expense_category_id) %>
+                </select>
+              </div>
+              <div class="col-span-6">
+                <input type="text" name="charge_expenses[<%= i %>][description]" value="<%= exp.description %>" placeholder="Description" class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm">
+              </div>
+              <div class="col-span-2">
+                <input type="number" name="charge_expenses[<%= i %>][amount]" value="<%= exp.amount %>" placeholder="0.00" step="0.01" class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm">
+              </div>
+              <div class="col-span-1 flex justify-center pt-2">
+                <button type="button" data-action="expense-form#removeRow" class="text-red-400 hover:text-red-600 text-lg leading-none">&times;</button>
+              </div>
+            </div>
+          <% end %>
+        </div>
+
+        <template data-expense-form-target="template">
+          <div class="expense-row grid grid-cols-12 gap-2 items-start mb-2">
+            <div class="col-span-3">
+              <select name="charge_expenses[NEW_INDEX][expense_category_id]" class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm">
+                <option value="">Category</option>
+                <%= grouped_expense_category_options %>
+              </select>
+            </div>
+            <div class="col-span-6">
+              <input type="text" name="charge_expenses[NEW_INDEX][description]" placeholder="Description" class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm">
+            </div>
+            <div class="col-span-2">
+              <input type="number" name="charge_expenses[NEW_INDEX][amount]" placeholder="0.00" step="0.01" class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm">
+            </div>
+            <div class="col-span-1 flex justify-center pt-2">
+              <button type="button" data-action="expense-form#removeRow" class="text-red-400 hover:text-red-600 text-lg leading-none">&times;</button>
+            </div>
+          </div>
+        </template>
+
+        <div class="flex justify-end mt-4">
+          <%= submit_tag "Save Expenses", class: "bg-green-camp text-white px-4 py-2 rounded-md text-sm font-medium cursor-pointer hover:bg-green-dark" %>
+        </div>
+      <% end %>
+    </div>
+  <% end %>
+
   <div class="flex justify-end mt-4">
     <%= button_to "Reset to Unmatched", reset_match_admin_charge_path(@charge), method: :patch,
           class: "text-xs px-3 py-1.5 rounded border border-red-300 text-red-600 hover:bg-red-50 cursor-pointer" %>
