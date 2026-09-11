@@ -49,7 +49,7 @@ class ReportsController < ApplicationController
             receipt.expense_date.strftime("%Y-%m-%d"),
             receipt.vendor,
             receipt.payment_method.display_name,
-            expense.expense_category.name,
+            "#{expense.expense_category.section}: #{expense.expense_category.name}",
             expense.description,
             expense.amount.to_f
           ]
