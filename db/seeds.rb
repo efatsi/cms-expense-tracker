@@ -24,7 +24,8 @@ ExpenseCategory.delete_all
   "Healthcare"   => [ "Payroll", "Supplies" ],
   "Program"      => [ "PD Salary", "Counselor Salaries", "Supplies",
                       "Counselor Training + Certs" ],
-  "Personal"     => [ "Ann's Personal" ]
+  "Personal"     => [ "Ann's Personal" ],
+  "Barn"         => [ "Building / Grounds", "Horsecare" ]
 }.each do |section, names|
   names.each do |name|
     ExpenseCategory.create!(name: name, section: section, active: true)
