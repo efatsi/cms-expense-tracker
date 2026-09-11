@@ -271,27 +271,28 @@ class Admin::ChargesController < Admin::BaseController
   # Distributes a receipt's expenses across its charges, biggest to smallest.
   # Returns a hash of charge_id => [[expense, allocated_amount], ...]
   def distribute_receipt_expenses(receipt)
-    sorted_charges = receipt.charges.sort_by { |c| -c.amount.to_f }
-    sorted_expenses = receipt.expenses.sort_by { |e| -e.amount.to_f }
+    sorted_charges = receipt.charges.sort_by { |c| -c.amount.to_f.abs }
+    sorted_expenses = receipt.expenses.sort_by { |e| -e.amount.to_f.abs }
 
-    expense_pool = sorted_expenses.map { |e| [e, e.amount.to_f] }
+    expense_pool = sorted_expenses.map { |e| [e, e.amount.to_f.abs] }
     exp_idx = 0
     distribution = {}
 
     sorted_charges.each do |charge|
       rows = []
-      remaining = charge.amount.to_f
+      remaining = charge.amount.to_f.abs
+      sign = charge.amount.to_f >= 0 ? 1 : -1
 
       while remaining > 0.001 && exp_idx < expense_pool.size
         exp, exp_remaining = expense_pool[exp_idx]
 
         if exp_remaining <= remaining + 0.001
-          rows << [exp, exp_remaining]
+          rows << [exp, exp_remaining * sign]
           remaining -= exp_remaining
           expense_pool[exp_idx][1] = 0
           exp_idx += 1
         else
-          rows << [exp, remaining]
+          rows << [exp, remaining * sign]
           expense_pool[exp_idx][1] -= remaining
           remaining = 0
         end
