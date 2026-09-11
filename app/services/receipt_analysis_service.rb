@@ -70,7 +70,8 @@ class ReceiptAnalysisService
     )
 
     Rails.logger.info("ReceiptAnalysisService tokens — input: #{message.usage.input_tokens}, output: #{message.usage.output_tokens}")
-    result = JSON.parse(message.content.first.text)
+    raw = message.content.first.text.strip.gsub(/\A```(?:json)?\s*/, "").gsub(/\s*```\z/, "")
+    result = JSON.parse(raw)
     Rails.logger.info("ReceiptAnalysisService result:\n#{JSON.pretty_generate(result)}")
     result
   end
