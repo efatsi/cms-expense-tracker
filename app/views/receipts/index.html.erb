@@ -5,9 +5,7 @@
     </h1>
   </div>
   <div class="flex items-center gap-2">
-    <% if current_user.admin? %>
-      <%= link_to "Bulk Upload", bulk_upload_receipts_path, class: "border border-green-camp text-green-camp px-4 py-2 rounded-md text-sm font-medium hover:bg-green-50" %>
-    <% end %>
+    <%= link_to "Bulk Upload", bulk_upload_receipts_path, class: "border border-green-camp text-green-camp px-4 py-2 rounded-md text-sm font-medium hover:bg-green-50" %>
     <%= link_to "New Receipt", new_receipt_path, class: "bg-green-camp text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-green-dark" %>
   </div>
 </div>

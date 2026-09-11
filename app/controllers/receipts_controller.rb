@@ -1,7 +1,6 @@
 class ReceiptsController < ApplicationController
   before_action :set_receipt, only: [ :show, :edit, :update, :destroy, :approve, :reprocess ]
   before_action :authorize_receipt!, only: [ :show, :edit, :update, :destroy, :approve, :reprocess ]
-  before_action :require_admin!, only: [ :bulk_upload, :bulk_upload_single ]
 
   RECEIPT_FILTER_PARAMS = %w[user_id unmatched_charges].freeze
 
@@ -84,7 +83,7 @@ class ReceiptsController < ApplicationController
   end
 
   def bulk_upload
-    @users = User.order(:name)
+    @users = current_user.admin? ? User.order(:name) : [ current_user ]
     return unless request.post?
 
     user = User.find_by(email: params[:user_email])
@@ -179,6 +178,9 @@ class ReceiptsController < ApplicationController
   def bulk_upload_single
     user = User.find_by(email: params[:user_email])
     return render json: { error: "User not found" }, status: :unprocessable_entity unless user
+    unless current_user.admin? || user == current_user
+      return render json: { error: "Not authorized" }, status: :forbidden
+    end
 
     file = params[:file]
     return render json: { error: "No file provided" }, status: :bad_request unless file
