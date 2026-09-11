@@ -111,10 +111,6 @@ export default class extends Controller {
     this._uploading = false
     this._render()
 
-    const allSuccess = this._items.every(item => item.status === "done")
-    if (allSuccess) {
-      setTimeout(() => { window.location.href = "/receipts?all=1" }, 1200)
-    }
   }
 
   _addFiles(newFiles) {
