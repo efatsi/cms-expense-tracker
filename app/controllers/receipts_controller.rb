@@ -68,7 +68,6 @@ class ReceiptsController < ApplicationController
   end
 
   def analyze
-    return render json: { vendor: nil, date: nil, expenses: [] } if Rails.env.production?
     return render json: { error: "No file" }, status: :bad_request unless params[:file].present?
 
     file = params[:file]
