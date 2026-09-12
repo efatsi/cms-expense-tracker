@@ -3,7 +3,7 @@ import { Controller } from "@hotwired/stimulus"
 const TIMEOUT_MS = 15000
 
 export default class extends Controller {
-  static targets = ["zone", "input", "label", "modal", "loadingState", "errorState", "errorMessage"]
+  static targets = ["zone", "input", "label", "modal", "loadingState", "errorState", "errorMessage", "preview"]
 
   dragover(event) {
     event.preventDefault()
@@ -50,7 +50,25 @@ export default class extends Controller {
 
   async _handleFile(file) {
     this.labelTarget.textContent = file.name
+    this._showPreview(file)
     await this._analyze(file)
+  }
+
+  _showPreview(file) {
+    if (!this.hasPreviewTarget) return
+    const url = URL.createObjectURL(file)
+    const isImage = file.type.startsWith("image/")
+    const isPdf = file.type === "application/pdf"
+    let mediaHtml = ""
+    if (isImage) {
+      mediaHtml = `<img src="${url}" class="w-full rounded border border-gray-200 object-contain" style="max-height:220px">`
+    } else if (isPdf) {
+      mediaHtml = `<iframe src="${url}#navpanes=0" class="w-full rounded border border-gray-200" style="height:220px" title="Receipt preview"></iframe>`
+    }
+    if (mediaHtml) {
+      this.previewTarget.innerHTML = `<p class="block text-sm font-medium text-gray-700 mb-1">File Preview</p>${mediaHtml}`
+      this.previewTarget.classList.remove("hidden")
+    }
   }
 
   async _analyze(file) {
