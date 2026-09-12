@@ -61,12 +61,12 @@ export default class extends Controller {
     const isPdf = file.type === "application/pdf"
     let mediaHtml = ""
     if (isImage) {
-      mediaHtml = `<img src="${url}" class="w-full rounded border border-gray-200 object-contain" style="max-height:220px">`
+      mediaHtml = `<img src="${url}" class="w-full rounded border border-gray-200 object-contain" style="max-height:600px">`
     } else if (isPdf) {
-      mediaHtml = `<iframe src="${url}#navpanes=0" class="w-full rounded border border-gray-200" style="height:220px" title="Receipt preview"></iframe>`
+      mediaHtml = `<iframe src="${url}#navpanes=0" class="w-full rounded border border-gray-200" style="height:700px" title="Receipt preview"></iframe>`
     }
     if (mediaHtml) {
-      this.previewTarget.innerHTML = `<p class="block text-sm font-medium text-gray-700 mb-1">File Preview</p>${mediaHtml}`
+      this.previewTarget.innerHTML = `<p class="text-sm font-medium text-gray-700 mb-2">File Preview</p>${mediaHtml}`
       this.previewTarget.classList.remove("hidden")
     }
   }
